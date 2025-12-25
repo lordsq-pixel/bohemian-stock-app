@@ -52,7 +52,7 @@ def get_market_status(market_name):
         if rate > 0.5: return "🟢 시장 강세", f"지수 {rate:.2f}% 상승 중. 적극 매수 시점입니다.", "#E8F5E9", "#2E7D32"
         elif rate > -0.5: return "🟡 시장 보합", f"지수 {rate:.2f}% 보합. 확실한 대장주만 공략하세요.", "#FFFDE7", "#F57F17"
         else: return "🔴 시장 약세", f"지수 {rate:.2f}% 하락 중. 현금 비중을 늘리고 관망하세요.", "#FFEBEE", "#C62828"
-    except: return "⚪ 데이터 대기", "운영시간이 아닙니다. [ AM 09:00 - PM 03:30 ]", "#F9F9F9", "#9E9E9E"
+    except: return "⚪ 준비중", "현재운영시간이 아닙니다.", "#F9F9F9", "#9E9E9E"
 
 # 종목 상세 분석
 def analyze_stock(ticker, today):
@@ -141,6 +141,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

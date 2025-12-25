@@ -1,78 +1,142 @@
 import streamlit as st
-import pandas as pd
 from pykrx import stock
-import yfinance as yf
-import plotly.graph_objects as go
+import pandas as pd
+import datetime
+import numpy as np
 from ta.momentum import RSIIndicator
-from datetime import datetime, timedelta
+from ta.trend import SMAIndicator
 
-# 1. 페이지 설정
-st.set_page_config(page_title="BOHEMIAN STOCK Pro", layout="wide")
-st.title("📊 BOHEMIAN STOCK Pro v4.0")
-st.caption("외인·기관 수급 분석 및 기술적 지표 시스템")
+# --- 1. 페이지 설정 및 초기화 ---
+st.set_page_config(page_title="BOHEMIAN STOCK", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. 안전한 날짜 설정 로직 (에러 방지 핵심)
-def get_safe_date():
-    # 우선 오늘 날짜 확인
-    now = datetime.now()
+# --- 2. 럭셔리 화이트 CSS (모바일/테이블 최적화) ---
+st.markdown("""
+    <style>
+    .stApp { background-color: #FFFFFF; }
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&display=swap');
+    html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; color: #1E1E1E; }
     
-    # 성탄절(25일)이나 주말, 공휴일엔 데이터가 없으므로 
-    # 안전하게 가장 최근 영업일인 '20251224'를 기본값으로 시도합니다.
-    # 나중에 평일이 되면 이 코드가 자동으로 오늘/어제 데이터를 찾습니다.
-    for i in range(0, 5):  # 최대 5일 전까지 거슬러 올라가며 확인
-        check_date = (now - timedelta(days=i)).strftime("%Y%m%d")
-        try:
-            # 간단한 조회를 통해 데이터가 있는지 확인
-            df = stock.get_market_ohlcv(check_date, check_date, "005930") # 삼성전자 기준 테스트
-            if not df.empty:
-                return check_date
-        except:
-            continue
-    return "20251224" # 최후의 수단으로 12월 24일 지정
+    .main-title { font-size: 24px; font-weight: 700; color: #000; text-align: center; margin-bottom: 5px; }
+    .sub-title { font-size: 13px; color: #888; text-align: center; margin-bottom: 25px; }
+    
+    /* 분석 버튼 스타일 */
+    .stButton>button {
+        width: 100%; height: 55px; background-color: #000; color: #FFF;
+        border-radius: 12px; font-size: 16px; font-weight: 600; border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 20px auto; display: block;
+    }
+    
+    /* 지수 신호등 디자인 */
+    .signal-box {
+        padding: 18px; border-radius: 15px; text-align: center; font-weight: 700;
+        margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
 
-target_date = get_safe_date()
+    /* 표 중앙 정렬 */
+    div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
+        display: flex; justify-content: center; margin: 0 auto; width: 100%;
+    }
 
-# 3. 사이드바 / UI 구성
-st.subheader("분석 시장 선택")
-market = st.radio("시장", ["KOSPI", "KOSDAQ"], horizontal=True)
+    .footer { text-align: center; padding: 30px; font-size: 11px; color: #AAA; border-top: 1px solid #F0F0F0; margin-top: 50px; }
+    </style>
+    """, unsafe_allow_html=True)
 
-if st.button("🚀 프리미엄 수급 분석 시작"):
-    with st.spinner(f"{target_date} 데이터 분석 중..."):
-        try:
-            # 4. 데이터 불러오기
-            df_base = stock.get_market_price_change_by_ticker(target_date, target_date, market=market)
-            
-            if df_base is None or df_base.empty:
-                st.warning(f"{target_date}은 시장 데이터가 없습니다. 다른 날짜를 시도해 주세요.")
-            else:
-                # 5. 수급 데이터 가져오기
-                df_investor = stock.get_market_net_purchases_of_equities_by_ticker(target_date, target_date, market)
-                df = pd.concat([df_base, df_investor], axis=1)
-                
-                # 거래량 상위 10개
-                top_10 = df.nlargest(10, '거래량')
-                
-                st.success(f"✅ {target_date} 분석 완료!")
-                
-                # 6. 결과 출력
-                st.write(f"### 🏆 {market} 수급 상위 종목")
-                st.dataframe(top_10[['종목명', '종가', '등락률', '외국인합계', '기관합계']])
-                
-                # 7. 차트 (첫 번째 종목)
-                first_ticker = top_10.index[0]
-                first_name = top_10.iloc[0]['종목명']
-                yf_ticker = first_ticker + (".KS" if market == "KOSPI" else ".KQ")
-                
-                data = yf.download(yf_ticker, period="3mo", interval="1d")
-                if not data.empty:
-                    fig = go.Figure()
-                    fig.add_trace(go.Scatter(x=data.index, y=data['Close'].iloc[:,0] if isinstance(data['Close'], pd.DataFrame) else data['Close'], name="주가"))
-                    fig.update_layout(title=f"{first_name} 최근 흐름", template="plotly_white")
-                    st.plotly_chart(fig, use_container_width=True)
+# --- 3. 로직 함수 정의 ---
 
-        except Exception as e:
-            st.error(f"오류 발생: {e}")
-            st.info("시장이 열리지 않는 날에는 분석이 어려울 수 있습니다.")
+# 시장 지수 신호등
+def get_market_status(market_name):
+    today = datetime.datetime.now().strftime("%Y%m%d")
+    try:
+        df = stock.get_market_index_change_by_ticker(today, today, market_name)
+        rate = df['등락률'].iloc[0]
+        if rate > 0.5: return "🟢 시장 강세", f"지수 {rate:.2f}% 상승 중. 적극 매수 시점입니다.", "#E8F5E9", "#2E7D32"
+        elif rate > -0.5: return "🟡 시장 보합", f"지수 {rate:.2f}% 보합. 확실한 대장주만 공략하세요.", "#FFFDE7", "#F57F17"
+        else: return "🔴 시장 약세", f"지수 {rate:.2f}% 하락 중. 현금 비중을 늘리고 관망하세요.", "#FFEBEE", "#C62828"
+    except: return "⚪ 데이터 대기", "장 개시 전이거나 데이터를 불러올 수 없습니다.", "#F9F9F9", "#9E9E9E"
 
-else:
-    st.info(f"분석 시작 버튼을 눌러주세요. (현재 기준 영업일: {target_date})")
+# 종목 상세 분석
+def analyze_stock(ticker, today):
+    try:
+        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=90)).strftime("%Y%m%d")
+        df = stock.get_market_ohlcv_by_date(start, today, ticker)
+        if len(df) < 30: return 0
+        curr = df['종가'].iloc[-1]
+        high = df['고가'].iloc[-1]
+        sma5 = SMAIndicator(close=df["종가"], window=5, fillna=True).sma_indicator().iloc[-1]
+        rsi = RSIIndicator(close=df["종가"], window=14, fillna=True).rsi().iloc[-1]
+        
+        score = 0
+        if curr > sma5: score += 2
+        if 50 <= rsi <= 70: score += 3
+        if curr >= high * 0.99: score += 2
+        return score
+    except: return -1
+
+# --- 4. 메인 UI ---
+
+st.markdown('<p class="main-title">📊 AI 실시간 종목 추적기 v3.0</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">실시간 빅데이터 분석 기반 매수 가이드</p>', unsafe_allow_html=True)
+
+market_type = st.sidebar.selectbox("대상 시장 선택", ["KOSPI", "KOSDAQ"])
+today_str = datetime.datetime.now().strftime("%Y%m%d")
+
+if st.button('🔍 실시간 급등주 & 매수 타점 분석'):
+    # A. 시장 신호등
+    title, desc, bg, txt = get_market_status(market_type)
+    st.markdown(f'<div class="signal-box" style="background-color:{bg}; color:{txt}; border:1px solid {txt}22;">'
+                f'<span style="font-size:19px;">{title}</span><br>'
+                f'<span style="font-size:13px; font-weight:400;">{desc}</span></div>', unsafe_allow_html=True)
+
+    with st.spinner('최적의 매수 종목을 선별하고 있습니다...'):
+        df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=market_type)
+        # 필터: 상승률 3%~25%, 거래량 상위
+        filtered = df_base[(df_base['등락률'] >= 3.0) & (df_base['거래량'] > 100000)].sort_values('거래량', ascending=False).head(15)
+
+    # B. 결과 리스트업
+    picks = []
+    for ticker in filtered.index:
+        name = stock.get_market_ticker_name(ticker)
+        score = analyze_stock(ticker, today_str)
+        if score >= 4:
+            price = filtered.loc[ticker, '종가']
+            picks.append({
+                '종목명': name,
+                '현재가': price,
+                '등락률': filtered.loc[ticker, '등락률'],
+                '점수': score,
+                '목표가(+3%)': int(price * 1.03),
+                '상세정보': f"https://finance.naver.com/item/main.naver?code={ticker}"
+            })
+
+    # C. 추천 종목 출력
+    st.subheader("🎯 AI PREMIUM PICKS")
+    
+    if picks:
+        df_picks = pd.DataFrame(picks).sort_values('점수', ascending=False).head(5)
+        st.data_editor(
+            df_picks,
+            column_config={
+                "점수": st.column_config.ProgressColumn("상승잠재력", min_value=0, max_value=7, format="%d"),
+                "현재가": st.column_config.NumberColumn(format="₩%d"),
+                "등락률": st.column_config.NumberColumn(format="%.2f%%"),
+                "목표가(+3%)": st.column_config.NumberColumn(format="₩%d"),
+                "상세정보": st.column_config.LinkColumn("네이버증권", display_text="열기")
+            },
+            hide_index=True, use_container_width=True
+        )
+    else:
+        st.info("현재 분석 기준을 통과한 강력한 추천 종목이 없습니다.")
+
+    st.markdown("---")
+    st.subheader("📊 실시간 거래량 TOP 10")
+    top_10 = filtered.head(10)[['종가', '등락률']].copy()
+    top_10['종목명'] = [stock.get_market_ticker_name(t) for t in top_10.index]
+    st.dataframe(top_10[['종목명', '종가', '등락률']], use_container_width=True)
+
+# --- 5. 푸터 ---
+st.markdown(f"""
+    <div class="footer">
+        본 분석 결과는 기술적 지표에 의존하며 투자 수익을 보장하지 않습니다.<br>
+        Copyright © 2025 보헤미안. All rights reserved.
+    </div>
+    """, unsafe_allow_html=True)

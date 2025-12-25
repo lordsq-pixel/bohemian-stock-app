@@ -76,6 +76,7 @@ def analyze_stock(ticker, today):
 
 st.markdown('<H2 class="main-title">📊 MAGIC STOCK. </H2>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title"># AI 실시간 시장 데이터 분석 기반 #</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">[ OPEN 09:00 - CLOSE 15:30 ]</p>', unsafe_allow_html=True)
 
 market_type = st.sidebar.selectbox("대상 시장 선택", ["KOSPI", "KOSDAQ"])
 today_str = datetime.datetime.now().strftime("%Y%m%d")
@@ -140,6 +141,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

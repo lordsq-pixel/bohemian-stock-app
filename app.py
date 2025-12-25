@@ -21,7 +21,7 @@ st.markdown("""
     
     /* 분석 버튼 스타일 */
     .stButton>button {
-        width: auto; height: 55px; background-color: #FFF; color: #000;
+        width: auto; height: 55px; background-color: #E0E0E0; color: #000;
         border-radius: 12px; font-size: 16px; font-weight: 600; border: none;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 20px auto; display: block;
     }
@@ -140,5 +140,6 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 

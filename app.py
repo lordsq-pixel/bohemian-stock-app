@@ -136,11 +136,11 @@ if st.button('🔍 실시간 매수 종목 찾아주기'):
 # --- 5. 푸터 ---
 st.markdown(f"""
     <div class="footer">
-        투자결과에 따라 투자원금의 손실이 발생할 수 있으며,<BR> 
-        그 손실은 투자자에게 귀속됩니다.<BR><BR>
+        투자결과에 따라 투자원금의 손실이 발생할 수 있습니다<BR>
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

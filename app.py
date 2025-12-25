@@ -27,7 +27,7 @@ st.markdown("""
 }
 
 .stButton>button {
-    width: 300px; /* 100% 대신 고정 너비(또는 60% 등) 지정 */
+    width: 200px; /* 100% 대신 고정 너비(또는 60% 등) 지정 */
     height: 55px; 
     background-color: #000; 
     color: #FFF;
@@ -154,6 +154,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

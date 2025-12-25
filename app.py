@@ -73,30 +73,6 @@ def analyze_stock(ticker, today):
     except: return -1
 
 # --- 4. 메인 UI ---
-# CSS를 사용하여 불필요한 아이콘 숨기기
-hide_icons = """
-    <style>
-    /* 1. 상단 헤더와 햄버거 메뉴 숨기기 (빨간색 왕관 버튼 포함) */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-
-    /* 2. 하단 푸터 숨기기 (Made with Streamlit) */
-    footer {visibility: hidden;}
-
-    /* 3. (추측) 파란색 유령 버튼 숨기기 */
-    /* 만약 특정 챗봇이나 외부 기능이라면 아래와 같은 방식으로 클래스를 찾아 숨겨야 합니다. */
-    /* 예시: .ghost-button-class { display: none; } */
-    /* 우선, 화면에 떠 있는 모든 플로팅 버튼을 숨기는 강력한 방법을 시도해봅니다. */
-    .stApp > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) {
-        display: none !important;
-    }
-    /* 또는 특정 z-index를 가진 요소를 숨기는 방법 */
-    div[data-testid="stDecoration"] {
-        display: none;
-    }
-    </style>
-    """
-st.markdown(hide_icons, unsafe_allow_html=True)
 
 st.markdown('<H3 class="main-title">📊 AI 기반 시장 분석 솔루션</H3>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">시장 데이터를 실시간으로 분석 & 매수 플랫폼</p>', unsafe_allow_html=True)
@@ -164,6 +140,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

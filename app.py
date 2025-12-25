@@ -20,11 +20,25 @@ st.markdown("""
     .sub-title { font-size: 13px; color: #888; text-align: center; margin-bottom: 25px; }
     
     /* 분석 버튼 스타일 */
-    .stButton>button {
-        width: 100%; height: 55px; background-color: #000; color: #FFF;
-        border-radius: 12px; font-size: 16px; font-weight: 600; border: none;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 20px auto; display: block;
-    }
+    .stButton {
+    display: flex;
+    justify-content: center; /* 버튼 자체를 화면 중앙으로 이동 */
+    margin-top: 20px;
+}
+
+.stButton>button {
+    width: 300px; /* 100% 대신 고정 너비(또는 60% 등) 지정 */
+    height: 55px; 
+    background-color: #000; 
+    color: #FFF;
+    border-radius: 12px; 
+    font-size: 16px; 
+    font-weight: 600; 
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+    display: block;
+    /* margin: 20px auto; 는 위 .stButton의 flex 설정으로 대체 가능합니다 */
+}
     
     /* 지수 신호등 디자인 */
     .signal-box {
@@ -140,6 +154,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

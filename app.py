@@ -74,8 +74,8 @@ def analyze_stock(ticker, today):
 
 # --- 4. 메인 UI ---
 
-st.markdown('<p class="main-title">📊 AI 실시간 종목 추적기</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">실시간 빅데이터 분석 기반</p>', unsafe_allow_html=True)
+st.markdown('<H3 class="main-title">📊 AI 실시간 종목 추적기</H3>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">👇 아래 버튼을 눌러 실시간 기회를 포착하세요!</p>', unsafe_allow_html=True)
 
 market_type = st.sidebar.selectbox("대상 시장 선택", ["KOSPI", "KOSDAQ"])
 today_str = datetime.datetime.now().strftime("%Y%m%d")
@@ -136,9 +136,10 @@ if st.button('🔍 실시간 급등주 & 매수 타점 분석'):
 # --- 5. 푸터 ---
 st.markdown(f"""
     <div class="footer">
-        본 데이터는 투자 참고용이며, 최종 책임은 본인에게 있습니다.<br>
-        Copyright © 2026 Bohemian. All rights reserved.
+        AI 주식(종목) 분석기는 참고용이며, 투자에 모든 책임은 본인에게 있습니다.<BR>
+        Copyright © 2025 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 

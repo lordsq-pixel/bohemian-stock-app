@@ -85,7 +85,7 @@ st.title("📊 BOHEMIAN STOCK Pro v4.0")
 st.markdown("외인·기관 수급 분석 및 카카오톡 알림 시스템")
 
 market = st.radio("분석 시장", ["KOSPI", "KOSDAQ"], horizontal=True)
-today_str = datetime.datetime.now().strftime("%Y%m%d")
+today_str = "20251224"
 
 if st.button('🚀 프리미엄 수급 분석 시작'):
     with st.spinner('전 종목 수급 및 기술적 지표 분석 중...'):
@@ -126,4 +126,5 @@ if st.button('🚀 프리미엄 수급 분석 시작'):
             st.info("현재 분석 기준(5점 이상)을 충족하는 종목이 없습니다.")
 
 st.divider()
+
 st.caption("💡 Tip: 외인과 기관이 동반 매수(양매수)하면서 거래량이 터진 종목은 신뢰도가 매우 높습니다.")

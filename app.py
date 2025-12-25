@@ -74,8 +74,8 @@ def analyze_stock(ticker, today):
 
 # --- 4. 메인 UI ---
 
-st.markdown('<H3 class="main-title">📊 Ai AUTO STOCK SYSTEM.</H3>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">프리미엄 빅데이터 분석 기반</p>', unsafe_allow_html=True)
+st.markdown('<H3 class="main-title">📊 나만의 AI AUTO STOCK.</H3>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title"># 프리미엄 빅데이터 분석기반 #</p>', unsafe_allow_html=True)
 
 market_type = st.sidebar.selectbox("대상 시장 선택", ["KOSPI", "KOSDAQ"])
 today_str = datetime.datetime.now().strftime("%Y%m%d")
@@ -140,6 +140,7 @@ st.markdown(f"""
         Copyright © 2025 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

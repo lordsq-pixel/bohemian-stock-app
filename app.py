@@ -75,7 +75,7 @@ def analyze_stock(ticker, today):
 # --- 4. 메인 UI ---
 
 st.markdown('<H3 class="main-title">📊 AI 기반 시장 분석 솔루션</H3>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">시장 데이터를 실시간으로 분석하고 전략적으로 매수를 돕는 AI 트레이딩 플랫폼</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">시장 데이터를 실시간으로 분석 및 매수 AI 플랫폼</p>', unsafe_allow_html=True)
 
 market_type = st.sidebar.selectbox("대상 시장 선택", ["KOSPI", "KOSDAQ"])
 today_str = datetime.datetime.now().strftime("%Y%m%d")
@@ -136,10 +136,12 @@ if st.button('🔍 실시간 매수 종목 찾아주기'):
 # --- 5. 푸터 ---
 st.markdown(f"""
     <div class="footer">
-        투자결과에 따라 투자원금의 손실이 발생할 수 있으며, 그 손실은 투자자에게 귀속됩니다.<BR>
+        투자결과에 따라 투자원금의 손실이 발생할 수 있으며,<BR>
+        그 손실은 투자자에게 귀속됩니다.<BR>
         Copyright © 2025 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

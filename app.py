@@ -74,9 +74,9 @@ def analyze_stock(ticker, today):
 
 # --- 4. 메인 UI ---
 
-st.markdown('<H2 class="main-title">📊 MAGIC STOCK. </H2>', unsafe_allow_html=True)
+st.markdown('<H3 class="main-title">📊 MAGIC STOCK. </H3>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title"># AI 실시간 빅데이터 분석 기반 #</p>', unsafe_allow_html=True)
-st.markdown('<H3 class="sub-title">[ 09:00 - 15:30 ]</H3>', unsafe_allow_html=True)
+st.markdown('<H4 class="sub-title">[ 09:00 - 15:30 ]</H4>', unsafe_allow_html=True)
 
 market_type = st.sidebar.selectbox("📊 시장선택", ["1. 코스피", "2. 코스닥"])
 today_str = datetime.datetime.now().strftime("%Y%m%d")
@@ -141,4 +141,5 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 

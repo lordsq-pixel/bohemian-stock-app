@@ -175,7 +175,7 @@ def analyze_stock(ticker, today):
 # 상단 네비게이션 바
 st.markdown(f"""
     <div class="top-nav">
-        <div class="brand-name">MAGIC SECURITIES</div>
+        <div class="brand-name">MAGIC STOCK.</div>
         <div id="live-clock-text" class="live-clock">{datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S')}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -184,7 +184,7 @@ st.markdown(f"""
 main_col1, main_col2 = st.columns([2, 1])
 
 with main_col1:
-    st.markdown('<div class="section-title">MARKET OVERVIEW</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">국내시황</div>', unsafe_allow_html=True)
     idx_col1, idx_col2 = st.columns(2)
     
     for m_name, col in zip(["KOSPI", "KOSDAQ"], [idx_col1, idx_col2]):
@@ -199,12 +199,12 @@ with main_col1:
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown('<div class="section-title">AI QUANT ANALYSIS</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">국내시황 선택</div>', unsafe_allow_html=True)
     m_type = st.radio("시장 선택", ["KOSPI", "KOSDAQ"], horizontal=True, label_visibility="collapsed")
     
-    if st.button('실시간 유망 종목 스캔'):
+    if st.button('AI 실시간 추천 스캔'):
         today_str = datetime.datetime.now().strftime("%Y%m%d")
-        with st.spinner('증권사 퀀트 알고리즘 가동 중...'):
+        with st.spinner('AI 퀀트 알고리즘 추적중...'):
             df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=m_type)
             filtered = df_base[(df_base['등락률'] >= 0.5) & (df_base['거래량'] > 100000)].sort_values('거래량', ascending=False).head(20)
 
@@ -257,8 +257,9 @@ with main_col2:
 # --- 5. 푸터 ---
 st.markdown("""
     <div class="footer">
-        <b>[투자 유의사항]</b> 본 서비스에서 제공하는 모든 정보는 투자 참고 사항이며,<br>
-        데이터 오류나 지연이 발생할 수 있습니다. 최종 투자 판단의 책임은 본인에게 있습니다.<br><br>
-        ⓒ 2025 MAGIC SECURITIES SYSTEM. All rights reserved.
+        본 서비스에서 제공하는 모든 정보는 투자 참고 사항이며,<br>
+        최종 투자 판단의 책임은 본인에게 있습니다.<br><br>
+        Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+

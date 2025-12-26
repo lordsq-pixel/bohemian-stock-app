@@ -8,7 +8,7 @@ from ta.trend import SMAIndicator
 from ta.volatility import BollingerBands
 
 # --- 1. 페이지 설정 ---
-st.set_page_config(page_title="MAGIC SECURITIES", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="MAGIC STOCK.", layout="wide", initial_sidebar_state="collapsed")
 
 # --- 2. 증권사 스타일 CSS (High-Density Professional UI) ---
 st.markdown("""
@@ -262,6 +262,7 @@ st.markdown("""
         Copylight ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

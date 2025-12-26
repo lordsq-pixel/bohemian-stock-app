@@ -257,8 +257,9 @@ with main_col2:
 # --- 5. 푸터 ---
 st.markdown("""
     <div class="footer">
-        <b>[투자 유의사항]</b> 본 서비스에서 제공하는 모든 정보는 투자 참고 사항이며,<br>
+        본 서비스에서 제공하는 모든 정보는 투자 참고 사항이며,<br>
         데이터 오류나 지연이 발생할 수 있습니다. 최종 투자 판단의 책임은 본인에게 있습니다.<br><br>
-        ⓒ 2025 MAGIC SECURITIES SYSTEM. All rights reserved.
+        Copylight ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+

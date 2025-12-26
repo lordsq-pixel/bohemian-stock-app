@@ -44,15 +44,20 @@ st.markdown("""
 # --- 3. 로직 함수 정의 ---
 
 # 시장 지수 신호등
-def get_market_status(market_name):
-    today = datetime.datetime.now().strftime("%Y%m%d")
-    try:
-        df = stock.get_market_index_change_by_ticker(today, today, market_name)
-        rate = df['등락률'].iloc[0]
-        if rate > 0.5: return "🟢 시장 강세", f"지수 {rate:.2f}% 상승 중. 적극 매수 시점입니다.", "#E8F5E9", "#2E7D32"
-        elif rate > -0.5: return "🟡 시장 보합", f"지수 {rate:.2f}% 보합. 확실한 대장주만 공략하세요.", "#FFFDE7", "#F57F17"
-        else: return "🔴 시장 약세", f"지수 {rate:.2f}% 하락 중. 현금 비중을 늘리고 관망하세요.", "#FFEBEE", "#C62828"
-    except: return "⚪ 데이타 준비중", "현재 운영시간이 아닙니다.", "#F9F9F9", "#9E9E9E"
+def get_market_status(market_code, today):
+    df = stock.get_market_index_change_by_ticker(today, today, market_code)
+
+    if df.empty:
+        return "⚪ 관망 구간", "지수 데이터 미확정", "#F5F5F5", "#9E9E9E"
+
+    rate = df['등락률'].iloc[0]
+
+    if rate > 0.5:
+        return "🟢 시장 강세", f"지수 {rate:.2f}% 상승", "#E8F5E9", "#2E7D32"
+    elif rate > -0.5:
+        return "🟡 시장 보합", f"지수 {rate:.2f}% 보합", "#FFFDE7", "#F57F17"
+    else:
+        return "🔴 시장 약세", f"지수 {rate:.2f}% 하락", "#FFEBEE", "#C62828"
 
 # 종목 상세 분석
 def analyze_stock(ticker, today):
@@ -145,4 +150,5 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 

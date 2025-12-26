@@ -270,7 +270,7 @@ if "국내" in country_mode:
 # ==========================================
 else:
     with main_col1:
-        st.markdown('<div class="section-title">현재재시황</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">미국 시황</div>', unsafe_allow_html=True)
         idx_col1, idx_col2 = st.columns(2)
         
         for name, ticker in zip(["S&P 500", "NASDAQ"], ["^GSPC", "^IXIC"]):
@@ -360,5 +360,6 @@ st.markdown("""
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 

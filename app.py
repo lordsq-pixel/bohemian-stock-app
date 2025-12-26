@@ -6,143 +6,138 @@ import numpy as np
 from ta.momentum import RSIIndicator
 from ta.trend import SMAIndicator
 
-# --- 1. 페이지 설정 ---
+# --- 1. 페이지 설정 및 초기화 ---
 st.set_page_config(page_title="BOHEMIAN STOCK", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 2. CSS ---
+# --- 2. 럭셔리 화이트 CSS (모바일/테이블 최적화) ---
 st.markdown("""
-<style>
-.stApp { background-color: #FFFFFF; }
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&display=swap');
-html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; color: #1E1E1E; }
+    <style>
+    .stApp { background-color: #FFFFFF; }
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&display=swap');
+    html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; color: #1E1E1E; }
+    
+    .main-title { font-size: 24px; font-weight: 700; color: #000; text-align: center; margin-bottom: 5px; }
+    .sub-title { font-size: 13px; color: #888; text-align: center; margin-bottom: 25px; }
+    
+    /* 분석 버튼 스타일 */
+    .stButton>button {
+        width: auto; height: 55px; background-color: #FFF; color: #000;
+        border-radius: 12px; font-size: 16px; font-weight: 600; border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 20px auto; display: block;
+    }
+   
+    /* 지수 신호등 디자인 */
+    .signal-box {
+        padding: 18px; border-radius: 15px; text-align: center; font-weight: 700;
+        margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
 
-.main-title { font-size: 24px; font-weight: 700; text-align: center; }
-.sub-title { font-size: 13px; color: #888; text-align: center; margin-bottom: 20px; }
+    /* 표 중앙 정렬 */
+    div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
+        display: flex; justify-content: center; margin: 0 auto; width: 100%;
+    }
 
-.stButton>button {
-    height: 55px; border-radius: 12px; font-size: 16px; font-weight: 600;
-    background-color: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.signal-box {
-    padding: 18px; border-radius: 15px; text-align: center;
-    font-weight: 700; margin-bottom: 25px;
-}
-
-.footer {
-    text-align: center; padding: 30px; font-size: 11px; color: #AAA;
-    border-top: 1px solid #F0F0F0; margin-top: 50px;
-}
-</style>
-""", unsafe_allow_html=True)
+    .footer { text-align: center; padding: 30px; font-size: 11px; color: #AAA; border-top: 1px solid #F0F0F0; margin-top: 50px; }
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- 3. 로직 함수 정의 ---
 
-def get_latest_trading_day(market_code: str) -> str | None:
-    """
-    오늘 기준으로 가장 최근의 거래일을 YYYYMMDD 문자열로 반환
-    """
-    today = datetime.datetime.today()
+# 시장 지수 신호등
+def get_market_status(market_name):
+    today = datetime.datetime.now().strftime("%Y%m%d")
+    try:
+        df = stock.get_market_index_change_by_ticker(today, today, market_name)
+        rate = df['등락률'].iloc[0]
+        if rate > 0.5: return "🟢 시장 강세", f"지수 {rate:.2f}% 상승 중. 적극 매수 시점입니다.", "#E8F5E9", "#2E7D32"
+        elif rate > -0.5: return "🟡 시장 보합", f"지수 {rate:.2f}% 보합. 확실한 대장주만 공략하세요.", "#FFFDE7", "#F57F17"
+        else: return "🔴 시장 약세", f"지수 {rate:.2f}% 하락 중. 현금 비중을 늘리고 관망하세요.", "#FFEBEE", "#C62828"
+    except: return "⚪ 데이타 준비중", "현재 운영시간이 아닙니다.", "#F9F9F9", "#9E9E9E"
 
-    for i in range(10):  # 최대 10일 전까지 탐색
-        day = (today - datetime.timedelta(days=i)).strftime("%Y%m%d")
-        try:
-            df = stock.get_market_index_change_by_ticker(day, day, market_code)
-            if not df.empty:
-                return day
-        except:
-            continue
-
-    return None
-
-
-def get_market_status(market_code, today):
-    df = stock.get_market_index_change_by_ticker(today, today, market_code)
-
-    if df.empty:
-        return "⚪ 관망 구간", "지수 데이터 미확정", "#F5F5F5", "#9E9E9E"
-
-    rate = df['등락률'].iloc[0]
-
-    if rate > 0.5:
-        return "🟢 시장 강세", f"지수 {rate:.2f}% 상승", "#E8F5E9", "#2E7D32"
-    elif rate > -0.5:
-        return "🟡 시장 보합", f"지수 {rate:.2f}% 보합", "#FFFDE7", "#F57F17"
-    else:
-        return "🔴 시장 약세", f"지수 {rate:.2f}% 하락", "#FFEBEE", "#C62828"
-
-
+# 종목 상세 분석
 def analyze_stock(ticker, today):
-    start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=90)).strftime("%Y%m%d")
-    df = stock.get_market_ohlcv_by_date(start, today, ticker)
+    try:
+        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=90)).strftime("%Y%m%d")
+        df = stock.get_market_ohlcv_by_date(start, today, ticker)
+        if len(df) < 30: return 0
+        curr = df['종가'].iloc[-1]
+        high = df['고가'].iloc[-1]
+        sma5 = SMAIndicator(close=df["종가"], window=5, fillna=True).sma_indicator().iloc[-1]
+        rsi = RSIIndicator(close=df["종가"], window=14, fillna=True).rsi().iloc[-1]
+        
+        score = 0
+        if curr > sma5: score += 2
+        if 50 <= rsi <= 70: score += 3
+        if curr >= high * 0.99: score += 2
+        return score
+    except: return -1
 
-    if df.empty or len(df) < 30:
-        return 0
+# --- 4. 메인 UI ---
 
-    sma5 = SMAIndicator(df["종가"], window=5).sma_indicator()
-    rsi = RSIIndicator(df["종가"], window=14).rsi()
-
-    if sma5.isna().iloc[-1] or rsi.isna().iloc[-1]:
-        return 0
-
-    score = 0
-    if df['종가'].iloc[-1] > sma5.iloc[-1]: score += 2
-    if 50 <= rsi.iloc[-1] <= 70: score += 3
-    if df['종가'].iloc[-1] >= df['고가'].iloc[-1] * 0.99: score += 2
-
-    return score
-
-
-# --- 4. UI ---
-
-st.markdown('<h2 class="main-title">📊 MAGIC STOCK.</h2>', unsafe_allow_html=True)
+st.markdown('<H2 class="main-title">📊 MAGIC STOCK. </H2>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title"># AI 실시간 빅데이터 분석 기반 #</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">[ 09:00 - 15:30 ]</p>', unsafe_allow_html=True)
+st.markdown('<H4 class="sub-title">[ 09:00 - 15:30 ]</H4>', unsafe_allow_html=True)
 
 market_type = st.sidebar.selectbox("📊 시장선택", ["KOSPI", "KOSDAQ"])
-market_code = market_type
+today_str = datetime.datetime.now().strftime("%Y%m%d")
 
-today_str = get_latest_trading_day(market_code)
-if not today_str:
-    st.error("최근 거래일을 찾을 수 없습니다.")
-    st.stop()
+if st.button('🔍 매수종목찾기'):
+    # A. 시장 신호등
+    title, desc, bg, txt = get_market_status(market_type)
+    st.markdown(f'<div class="signal-box" style="background-color:{bg}; color:{txt}; border:1px solid {txt}22;">'
+                f'<span style="font-size:19px;">{title}</span><br>'
+                f'<span style="font-size:13px; font-weight:400;">{desc}</span></div>', unsafe_allow_html=True)
 
-if st.button("🔍 매수종목찾기"):
-    title, desc, bg, txt = get_market_status(market_code, today_str)
-    st.markdown(
-        f'<div class="signal-box" style="background:{bg};color:{txt};border:1px solid {txt}22;">'
-        f'{title}<br><span style="font-size:13px;font-weight:400">{desc}</span></div>',
-        unsafe_allow_html=True
-    )
+    with st.spinner('최적의 매수 종목을 선별하고 있습니다...'):
+        df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=market_type)
+        # 필터: 상승률 3%~25%, 거래량 상위
+        filtered = df_base[(df_base['등락률'] >= 3.0) & (df_base['거래량'] > 100000)].sort_values('거래량', ascending=False).head(15)
 
-    with st.spinner("종목 분석 중..."):
-        df = stock.get_market_price_change_by_ticker(today_str, today_str, market=market_type)
-        df = df[(df['등락률'] >= 3) & (df['거래량'] > 100000)].sort_values('거래량', ascending=False).head(15)
-
+    # B. 결과 리스트업
     picks = []
-    for ticker in df.index:
+    for ticker in filtered.index:
+        name = stock.get_market_ticker_name(ticker)
         score = analyze_stock(ticker, today_str)
         if score >= 4:
-            price = df.loc[ticker, '종가']
+            price = filtered.loc[ticker, '종가']
             picks.append({
-                "종목명": stock.get_market_ticker_name(ticker),
-                "현재가": price,
-                "등락률": df.loc[ticker, '등락률'],
-                "점수": score,
-                "목표가(+3%)": int(price * 1.03),
-                "상세정보": f"https://finance.naver.com/item/main.naver?code={ticker}"
+                '종목명': name,
+                '현재가': price,
+                '등락률': filtered.loc[ticker, '등락률'],
+                '점수': score,
+                '목표가(+3%)': int(price * 1.03),
+                '상세정보': f"https://finance.naver.com/item/main.naver?code={ticker}"
             })
 
+    # C. 추천 종목 출력
+    st.subheader("🎯 AI PREMIUM PICKS")
+    
     if picks:
-        st.data_editor(pd.DataFrame(picks).sort_values("점수", ascending=False),
-                       hide_index=True, use_container_width=True)
+        df_picks = pd.DataFrame(picks).sort_values('점수', ascending=False).head(5)
+        st.data_editor(
+            df_picks,
+            column_config={
+                "점수": st.column_config.ProgressColumn("상승잠재력", min_value=0, max_value=7, format="%d"),
+                "현재가": st.column_config.NumberColumn(format="₩%d"),
+                "등락률": st.column_config.NumberColumn(format="%.2f%%"),
+                "목표가(+3%)": st.column_config.NumberColumn(format="₩%d"),
+                "상세정보": st.column_config.LinkColumn("네이버증권", display_text="열기")
+            },
+            hide_index=True, use_container_width=True
+        )
     else:
-        st.info("조건을 만족하는 종목이 없습니다.")
+        st.info("현재 분석 기준을 통과한 강력한 추천 종목이 없습니다.")
+
+    st.markdown("---")
+    st.subheader("📊 실시간 거래량 TOP 10")
+    top_10 = filtered.head(10)[['종가', '등락률']].copy()
+    top_10['종목명'] = [stock.get_market_ticker_name(t) for t in top_10.index]
+    st.dataframe(top_10[['종목명', '종가', '등락률']], use_container_width=True)
 
 # --- 5. 푸터 ---
-st.markdown("""
-<div class="footer">
-투자결과에 따라 원금 손실이 발생할 수 있습니다.<br>
-Copyright © 2026 보헤미안
-</div>
-""", unsafe_allow_html=True)
+st.markdown(f"""
+    <div class="footer">
+        투자결과에 따라 투자원금의 손실이 발생할 수 있습니다<BR>
+        Copyright © 2026 보헤미안. All rights reserved.
+    </div>
+    """, unsafe_allow_html=True)

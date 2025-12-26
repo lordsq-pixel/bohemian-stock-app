@@ -8,157 +8,56 @@ from ta.trend import SMAIndicator
 from ta.volatility import BollingerBands
 
 # --- 1. 페이지 설정 ---
-st.set_page_config(page_title="MAGIC STOCK.", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="MAGIC SECURITIES", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 2. 증권사 스타일 CSS 및 실시간 시계 스크립트 ---
+# --- 2. 증권사 스타일 CSS (수급 배지 디자인 추가) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
 
-    /* 전체 배경: 증권사 특유의 밝은 회색 배경 */
-    .stApp {
-        background-color: #F2F4F7;
-        color: #1A1A1A;
-    }
-    
-    html, body, [class*="css"] {
-        font-family: 'Pretendard', -apple-system, sans-serif;
-    }
+    .stApp { background-color: #F2F4F7; color: #1A1A1A; }
+    html, body, [class*="css"] { font-family: 'Pretendard', sans-serif; }
 
-    /* 상단 GNB 스타일 */
     .top-nav {
-        background-color: #FFFFFF;
-        padding: 20px 25px; /* 패딩 약간 증가 */
-        border-bottom: 2px solid #E5E8EB;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: sticky;
-        top: 0;
-        z-index: 999;
+        background-color: #FFFFFF; padding: 15px 25px;
+        border-bottom: 1px solid #E5E8EB; display: flex;
+        justify-content: space-between; align-items: center;
+        position: sticky; top: 0; z-index: 999;
     }
-    
-    /* 타이틀 크기 대폭 확대 */
-    .brand-name {
-        font-size: 36px; /* 20px -> 36px로 확대 */
-        font-weight: 800;
-        color: #0052CC; /* 증권사 블루 */
-        letter-spacing: -1px;
-    }
+    .brand-name { font-size: 20px; font-weight: 700; color: #0052CC; }
+    .live-clock { font-size: 14px; color: #6B7684; }
 
-    /* 실시간 시계 */
-    .live-clock {
-        font-size: 16px;
-        font-weight: 600;
-        color: #4E5968;
-        background: #F9FAFB;
-        padding: 8px 15px;
-        border-radius: 8px;
-        border: 1px solid #E5E8EB;
-        font-variant-numeric: tabular-nums; /* 숫자 너비 고정 */
-    }
-
-    /* 섹션 제목 스타일 */
     .section-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #1A1A1A;
-        margin: 25px 0 15px 0;
-        padding-left: 10px;
-        border-left: 4px solid #0052CC;
+        font-size: 18px; font-weight: 700; color: #1A1A1A;
+        margin: 25px 0 15px 0; padding-left: 10px; border-left: 4px solid #0052CC;
     }
 
-    /* 시장 지수 카드 */
-    .index-card {
-        background: white;
-        border-radius: 12px;
-        padding: 15px;
-        border: 1px solid #E5E8EB;
-        text-align: left;
+    /* 수급 배지 스타일 */
+    .badge {
+        padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px;
     }
-    .index-name { font-size: 13px; color: #6B7684; font-weight: 500; }
-    .index-value { font-size: 20px; font-weight: 700; margin: 4px 0; }
-    .index-change { font-size: 13px; font-weight: 600; }
+    .badge-for { background-color: #E8F2FF; color: #0052CC; border: 1px solid #CCE0FF; } /* 외인 */
+    .badge-ins { background-color: #FFF0F5; color: #D63384; border: 1px solid #FFD6E7; } /* 기관 */
 
-    /* 분석 버튼 */
-    .stButton>button {
-        width: 100% !important;
-        height: 50px;
-        background: #0052CC !important;
-        color: #FFFFFF !important;
-        border: none !important;
-        border-radius: 8px !important;
-        font-size: 16px !important;
-        font-weight: 600 !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-    }
-
-    /* 종목 리스트 스타일 */
     .stock-row {
-        background: white;
-        border-bottom: 1px solid #F2F4F7;
-        padding: 15px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: background 0.2s;
+        background: white; border-bottom: 1px solid #F2F4F7;
+        padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
     }
     .stock-row:hover { background: #F9FAFB; }
-    .stock-info-main { display: flex; flex-direction: column; }
-    .stock-name { font-size: 16px; font-weight: 600; color: #1A1A1A; }
-    .stock-code { font-size: 12px; color: #ADB5BD; }
     
-    .stock-price-area { text-align: right; }
-    .current-price { font-size: 16px; font-weight: 700; }
-    .price-change { font-size: 12px; font-weight: 500; }
-
     .up { color: #E52E2E; }
     .down { color: #0055FF; }
 
-    /* 푸터 */
-    .footer {
-        padding: 40px 20px;
-        text-align: center;
-        font-size: 12px;
-        color: #8B95A1;
-        background: #F9FAFB;
-        margin-top: 50px;
+    .stButton>button {
+        width: 100% !important; height: 50px; background: #0052CC !important;
+        color: white !important; border-radius: 8px !important; font-weight: 600 !important;
     }
 
-    /* Streamlit 기본 요소 제거 */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     </style>
-
-    <div class="top-nav">
-        <div class="brand-name">MAGIC STOCK.</div>
-        <div id="live-clock-text" class="live-clock">로딩 중...</div>
-    </div>
-
-    <script>
-    function updateClock() {
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const hh = String(now.getHours()).padStart(2, '0');
-        const min = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        
-        const format = `${yyyy}.${mm}.${dd} ${hh}:${min}:${ss}`;
-        const clockElement = document.getElementById('live-clock-text');
-        if (clockElement) {
-            clockElement.innerText = format;
-        }
-    }
-    // 즉시 실행 및 1초마다 업데이트
-    updateClock();
-    setInterval(updateClock, 1000);
-    </script>
     """, unsafe_allow_html=True)
 
-# --- 3. 데이터 로직 (기존 로직 유지) ---
+# --- 3. 데이터 로직 (수급 분석 추가) ---
 
 def get_market_data(market_name):
     ticker = "1001" if market_name == "KOSPI" else "2001"
@@ -166,117 +65,118 @@ def get_market_data(market_name):
     start = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime("%Y%m%d")
     try:
         df = stock.get_index_ohlcv_by_date(start, end, ticker)
-        curr = df['종가'].iloc[-1]
-        prev = df['종가'].iloc[-2]
+        curr, prev = df['종가'].iloc[-1], df['종가'].iloc[-2]
         change = curr - prev
         rate = (change / prev) * 100
         return curr, change, rate
-    except:
-        return 0, 0, 0
+    except: return 0, 0, 0
 
-def analyze_stock(ticker, today):
+def analyze_stock_with_supply(ticker, today):
     try:
-        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=60)).strftime("%Y%m%d")
-        df = stock.get_market_ohlcv_by_date(start, today, ticker)
-        if len(df) < 30: return 0
-        indicator_bb = BollingerBands(close=df["종가"], window=20, window_dev=2)
-        df['bb_low'] = indicator_bb.bollinger_lband()
-        curr_close, curr_low, prev_low = df['종가'].iloc[-1], df['저가'].iloc[-1], df['저가'].iloc[-2]
-        rsi = RSIIndicator(close=df["종가"], window=14).rsi().iloc[-1]
-        sma5 = SMAIndicator(close=df["종가"], window=5).sma_indicator().iloc[-1]
+        # A. 가격 및 지표 분석 (기존 로직)
+        start_date = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=60)).strftime("%Y%m%d")
+        df = stock.get_market_ohlcv_by_date(start_date, today, ticker)
+        
+        indicator_bb = BollingerBands(close=df["종가"], window=20)
+        bb_low = indicator_bb.bollinger_lband().iloc[-1]
+        rsi = RSIIndicator(close=df["종가"]).rsi().iloc[-1]
         
         score = 0
-        if (prev_low <= df['bb_low'].iloc[-2]) or (curr_low <= df['bb_low'].iloc[-1]):
-            if curr_close > df['bb_low'].iloc[-1]: score += 4
-        if curr_close > sma5: score += 1
-        if 30 <= rsi <= 50: score += 2
-        if df['거래량'].iloc[-1] > df['거래량'].iloc[-20:-1].mean() * 1.1: score += 1
-        return score
-    except: return -1
+        if df['저가'].iloc[-1] <= bb_low * 1.01: score += 4  # 바닥권
+        if 30 <= rsi <= 55: score += 2
+        
+        # B. 수급 분석 (추가된 부분)
+        # 당일 외국인/기관 순매수량 확인
+        df_investor = stock.get_market_net_purchases_of_equities_by_ticker(today, today, ticker)
+        is_foreigner_buy = df_investor.loc[ticker, '외국인'] > 0
+        is_institution_buy = df_investor.loc[ticker, '기관합계'] > 0
+        
+        if is_foreigner_buy: score += 2
+        if is_institution_buy: score += 2
+        
+        return score, is_foreigner_buy, is_institution_buy
+    except:
+        return -1, False, False
 
 # --- 4. 메인 UI 구성 ---
 
-# 메인 레이아웃 (GNB는 CSS 파트에서 이미 출력됨)
+st.markdown(f"""
+    <div class="top-nav">
+        <div class="brand-name">MAGIC SECURITIES</div>
+        <div class="live-clock">{datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S')}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 main_col1, main_col2 = st.columns([2, 1])
 
 with main_col1:
-    st.markdown('<div class="section-title">국내시장 상황</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">MARKET INDEX</div>', unsafe_allow_html=True)
     idx_col1, idx_col2 = st.columns(2)
-    
     for m_name, col in zip(["KOSPI", "KOSDAQ"], [idx_col1, idx_col2]):
         val, chg, rt = get_market_data(m_name)
-        color_class = "up" if chg > 0 else "down"
-        sign = "+" if chg > 0 else ""
+        color = "up" if chg > 0 else "down"
         col.markdown(f"""
-            <div class="index-card">
-                <div class="index-name">{m_name}</div>
-                <div class="index-value">{val:,.2f}</div>
-                <div class="index-change {color_class}">{sign}{chg:,.2f} ({sign}{rt:.2f}%)</div>
+            <div style="background:white; padding:15px; border-radius:12px; border:1px solid #E5E8EB;">
+                <div style="font-size:12px; color:#6B7684;">{m_name}</div>
+                <div style="font-size:20px; font-weight:700;">{val:,.2f}</div>
+                <div class="{color}" style="font-size:13px; font-weight:600;">{'▲' if chg > 0 else '▼'} {abs(chg):,.2f} ({rt:.2f}%)</div>
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown('<div class="section-title">국내시장 선택</div>', unsafe_allow_html=True)
-    m_type = st.radio("시장 선택", ["KOSPI", "KOSDAQ"], horizontal=True, label_visibility="collapsed")
+    st.markdown('<div class="section-title">AI 수급 분석 포착</div>', unsafe_allow_html=True)
+    m_type = st.radio("시장", ["KOSPI", "KOSDAQ"], horizontal=True, label_visibility="collapsed")
     
-    if st.button('AI 추천종목'):
+    if st.button('실시간 수급 & 차트 스캔 시작'):
         today_str = datetime.datetime.now().strftime("%Y%m%d")
-        with st.spinner('AI 퀀트 알고리즘 검색중'):
+        with st.spinner('전 종목 수급 데이터를 분석 중입니다...'):
             df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=m_type)
-            filtered = df_base[(df_base['등락률'] >= 0.5) & (df_base['거래량'] > 100000)].sort_values('거래량', ascending=False).head(20)
+            # 거래량이 어느 정도 있는 종목 중 등락률이 안정적인 종목 필터링
+            filtered = df_base[(df_base['거래량'] > 150000) & (df_base['등락률'] >= -1)].sort_values('거래량', ascending=False).head(30)
 
             picks = []
             for ticker in filtered.index:
-                score = analyze_stock(ticker, today_str)
-                if score >= 4:
+                score, f_buy, i_buy = analyze_stock_with_supply(ticker, today_str)
+                if score >= 5: # 수급이 포함되어 기준 점수를 조금 높임
                     picks.append({
                         'ticker': ticker, 'name': stock.get_market_ticker_name(ticker),
                         'price': filtered.loc[ticker, '종가'], 'rate': filtered.loc[ticker, '등락률'],
-                        'score': score, 'target': int(filtered.loc[ticker, '종가'] * 1.05)
+                        'score': score, 'f_buy': f_buy, 'i_buy': i_buy
                     })
 
             if picks:
-                st.markdown('<div style="background: white; border-radius: 12px; overflow: hidden; border: 1px solid #E5E8EB;">', unsafe_allow_html=True)
                 for p in sorted(picks, key=lambda x: x['score'], reverse=True):
+                    f_badge = '<span class="badge badge-for">외인</span>' if p['f_buy'] else ''
+                    i_badge = '<span class="badge badge-ins">기관</span>' if p['i_buy'] else ''
                     color_class = "up" if p['rate'] > 0 else "down"
+                    
                     st.markdown(f"""
                         <div class="stock-row">
-                            <div class="stock-info-main">
-                                <span class="stock-name">{p['name']}</span>
-                                <span class="stock-code">{p['ticker']} | <b style="color:#0052CC">SCORE {p['score']}</b></span>
+                            <div>
+                                <div class="stock-name">{p['name']} <span style="font-size:12px; color:#0052CC; margin-left:5px;">★ {p['score']}</span></div>
+                                <div style="margin-top:5px;">{f_badge}{i_badge}<span class="stock-code">{p['ticker']}</span></div>
                             </div>
-                            <div class="stock-price-area">
+                            <div style="text-align:right;">
                                 <div class="current-price {color_class}">{p['price']:,}</div>
                                 <div class="price-change {color_class}">{'+' if p['rate'] > 0 else ''}{p['rate']:.2f}%</div>
-                                <div style="font-size:11px; color:#34C759; margin-top:2px;">Target: {p['target']:,}</div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
             else:
-                st.info("현재 분석 기준을 충족하는 종목이 없습니다.")
+                st.info("현재 수급과 기술적 지표가 일치하는 종목이 없습니다.")
 
 with main_col2:
-    st.markdown('<div class="section-title">거래량 TOP 10</div>', unsafe_allow_html=True)
-    try:
-        df_vol = stock.get_market_ohlcv_by_ticker(datetime.datetime.now().strftime("%Y%m%d"), market=m_type)
-        top_vol = df_vol.sort_values('거래량', ascending=False).head(10)
-        top_vol['종목명'] = [stock.get_market_ticker_name(t) for t in top_vol.index]
-        
-        for idx, row in top_vol.iterrows():
-            st.markdown(f"""
-                <div style="display:flex; justify-content:space-between; padding: 10px 5px; border-bottom: 1px solid #E5E8EB;">
-                    <span style="font-size:14px; font-weight:500;">{row['종목명']}</span>
-                    <span style="font-size:14px; color:#6B7684;">{row['거래량']//10000:,}만</span>
-                </div>
-            """, unsafe_allow_html=True)
-    except:
-        st.write("데이터를 불러올 수 없습니다.")
+    st.markdown('<div class="section-title">수급 TOP 5 (당일)</div>', unsafe_allow_html=True)
+    # 당일 외국인 순매수 상위
+    df_inv = stock.get_market_net_purchases_of_equities_by_ticker(datetime.datetime.now().strftime("%Y%m%d"), datetime.datetime.now().strftime("%Y%m%d"), m_type)
+    top_f = df_inv.sort_values('외국인', ascending=False).head(5)
+    
+    for t, row in top_f.iterrows():
+        name = stock.get_market_ticker_name(t)
+        st.markdown(f"""
+            <div style="display:flex; justify-content:space-between; padding:12px 5px; border-bottom:1px solid #E5E8EB;">
+                <span style="font-size:14px;">{name}</span>
+                <span style="font-size:14px; color:#0052CC; font-weight:600;">+{row['외국인']//1000:,.0f}K</span>
+            </div>
+        """, unsafe_allow_html=True)
 
-# --- 5. 푸터 ---
-st.markdown("""
-    <div class="footer">
-        본 서비스에서 제공하는 모든 정보는 투자 참고 사항이며,<br>
-        최종 투자 판단의 책임은 본인에게 있습니다.<br><br>
-        Copyright ⓒ 2026 Bohemian All rights reserved.
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown('<div class="footer">ⓒ 2025 MAGIC SECURITIES | 본 데이터는 투자 참고용입니다.</div>', unsafe_allow_html=True)

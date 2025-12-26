@@ -202,7 +202,7 @@ with main_col1:
     st.markdown('<div class="section-title">국내시장 선택</div>', unsafe_allow_html=True)
     m_type = st.radio("시장 선택", ["KOSPI", "KOSDAQ"], horizontal=True, label_visibility="collapsed")
     
-    if st.button('AI 실시간 추천 매수종목'):
+    if st.button('AI 실시간 추천종목'):
         today_str = datetime.datetime.now().strftime("%Y%m%d")
         with st.spinner('증권사 퀀트 알고리즘 가동 중...'):
             df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=m_type)
@@ -262,6 +262,7 @@ st.markdown("""
         Copylight ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

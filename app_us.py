@@ -331,7 +331,7 @@ else:
                     st.info("분석 기준(강력 매수 시그널)을 충족하는 종목이 없습니다.")
 
     with main_col2:
-        st.markdown('<div class="section-title">관심 종목 시세</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">실시간 거래 TOP 순위</div>', unsafe_allow_html=True)
         watch_list = ['NVDA', 'TSLA', 'AAPL', 'SOXL']
         
         for ticker in watch_list:
@@ -360,6 +360,7 @@ st.markdown("""
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

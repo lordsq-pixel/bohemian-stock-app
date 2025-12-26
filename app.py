@@ -45,14 +45,35 @@ st.markdown("""
 
 # 시장 지수 신호등
 def get_market_status(market_name):
-    today = datetime.datetime.now().strftime("%Y%m%d")
+    # 코스피는 '1001', 코스닥은 '2001'이라는 고유 번호를 사용하면 더 정확합니다.
+    ticker = "1001" if market_name == "KOSPI" else "2001"
+    
+    # 오늘부터 과거 10일치 데이터를 넉넉하게 가져옵니다 (주말/공휴일 대비)
+    end = datetime.datetime.now().strftime("%Y%m%d")
+    start = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime("%Y%m%d")
+    
     try:
-        df = stock.get_market_index_change_by_ticker(today, today, market_name)
-        rate = df['등락률'].iloc[0]
-        if rate > 0.5: return "🟢 시장 강세", f"지수 {rate:.2f}% 상승 중. 적극 매수 시점입니다.", "#E8F5E9", "#2E7D32"
-        elif rate > -0.5: return "🟡 시장 보합", f"지수 {rate:.2f}% 보합. 확실한 대장주만 공략하세요.", "#FFFDE7", "#F57F17"
-        else: return "🔴 시장 약세", f"지수 {rate:.2f}% 하락 중. 현금 비중을 늘리고 관망하세요.", "#FFEBEE", "#C62828"
-    except: return "⚪ 데이타 준비중", "현재 운영시간이 아닙니다.", "#F9F9F9", "#9E9E9E"
+        # 지수의 OHLCV(시가/고가/저가/종가) 데이터를 가져옴
+        df = stock.get_index_ohlcv_by_date(start, end, ticker)
+        
+        if len(df) < 2:
+            return "⚪ 데이터 준비중", "거래소 데이터를 불러오는 중입니다.", "#F9F9F9", "#9E9E9E"
+        
+        # 최신 종가와 전일 종가를 비교하여 등락률 계산
+        curr_price = df['종가'].iloc[-1]
+        prev_price = df['종가'].iloc[-2]
+        rate = ((curr_price - prev_price) / prev_price) * 100
+        
+        # 상태 판정 로직
+        if rate > 0.5:
+            return "🟢 시장 강세", f"지수 {rate:.2f}% 상승 중. 적극 매수 시점입니다.", "#E8F5E9", "#2E7D32"
+        elif rate > -0.5:
+            return "🟡 시장 보합", f"지수 {rate:.2f}% 보합. 확실한 대장주만 공략하세요.", "#FFFDE7", "#F57F17"
+        else:
+            return "🔴 시장 약세", f"지수 {rate:.2f}% 하락 중. 현금 비중을 늘리세요.", "#FFEBEE", "#C62828"
+            
+    except Exception as e:
+        return "⚪ 확인 불가", f"연결 오류: {str(e)}", "#F9F9F9", "#9E9E9E"
 
 # 종목 상세 분석
 def analyze_stock(ticker, today):
@@ -141,3 +162,4 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+

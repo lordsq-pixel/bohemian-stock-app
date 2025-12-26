@@ -12,128 +12,86 @@ from ta.volatility import BollingerBands
 # --- 1. 페이지 설정 ---
 st.set_page_config(page_title="MAGIC STOCK", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 2. 증권사 스타일 CSS (High-Density Professional UI) ---
+# --- 2. 증권사 스타일 CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
     
-    /* 전체 배경: 증권사 특유의 밝은 회색 배경 */
-    .stApp {
-        background-color: #F2F4F7;
-        color: #1A1A1A;
+    .stApp { background-color: #F2F4F7; color: #1A1A1A; }
+    html, body, [class*="css"] { font-family: 'Pretendard', -apple-system, sans-serif; }
+
+    /* [핵심] 상단 여백 제거 및 컨텐츠 위로 올리기 */
+    .block-container {
+        padding-top: 0rem !important; /* 상단 여백 최소화 */
+        padding-bottom: 2rem !important;
+        max-width: 100% !important;
     }
     
-    html, body, [class*="css"] {
-        font-family: 'Pretendard', -apple-system, sans-serif;
+    /* Streamlit 기본 헤더(햄버거 메뉴 라인) 숨기기 */
+    header[data-testid="stHeader"] {
+        display: none !important;
     }
 
-    /* 상단 GNB 스타일 */
+    /* 상단 GNB (위치 보정) */
     .top-nav {
-        background-color: #FFFFFF;
-        padding: 15px 25px;
+        background-color: #FFFFFF; 
+        padding: 12px 25px; /* 높이 약간 조절 */
         border-bottom: 1px solid #E5E8EB;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: sticky;
-        top: 0;
-        z-index: 999;
+        display: flex; justify-content: space-between; align-items: center;
+        position: sticky; top: 0; z-index: 999;
+        margin-top: 0px; /* 마진 제거 */
     }
-    .brand-name {
-        font-size: 20px;
-        font-weight: 700;
-        color: #0052CC; /* 증권사 블루 */
-        letter-spacing: -0.5px;
-    }
+    
+    .brand-name { font-size: 20px; font-weight: 700; color: #0052CC; letter-spacing: -0.5px; }
+    .live-clock { font-size: 14px; font-weight: 500; color: #6B7684; }
 
-    /* 실시간 시계 */
-    .live-clock {
-        font-size: 14px;
-        font-weight: 500;
-        color: #6B7684;
-    }
-
-    /* 섹션 제목 스타일 */
+    /* ... (나머지 스타일은 기존과 동일하게 유지) ... */
+    
     .section-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #1A1A1A;
-        margin: 25px 0 15px 0;
-        padding-left: 10px;
-        border-left: 4px solid #0052CC;
+        font-size: 18px; font-weight: 700; color: #1A1A1A;
+        margin: 25px 0 15px 0; padding-left: 10px; border-left: 4px solid #0052CC;
     }
 
-    /* 시장 지수 카드 */
+    /* 카드 스타일 */
     .index-card {
-        background: white;
-        border-radius: 12px;
-        padding: 15px;
-        border: 1px solid #E5E8EB;
-        text-align: left;
+        background: white; border-radius: 12px; padding: 15px; border: 1px solid #E5E8EB; text-align: left;
     }
     .index-name { font-size: 13px; color: #6B7684; font-weight: 500; }
     .index-value { font-size: 20px; font-weight: 700; margin: 4px 0; }
     .index-change { font-size: 13px; font-weight: 600; }
 
-    /* 분석 버튼: 증권사 메인 버튼 스타일 */
+    /* 버튼 스타일 */
     .stButton>button {
-        width: 100% !important;
-        height: 50px;
-        background: #0052CC !important;
-        color: #FFFFFF !important;
-        border: none !important;
-        border-radius: 8px !important;
-        font-size: 16px !important;
-        font-weight: 600 !important;
+        width: 100% !important; height: 50px;
+        background: #0052CC !important; color: #FFFFFF !important;
+        border: none !important; border-radius: 8px !important;
+        font-size: 16px !important; font-weight: 600 !important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     }
+    .stButton>button:hover { background: #003fa3 !important; }
 
-    /* 종목 리스트 스타일 (MTS 스타일) */
+    /* 리스트 스타일 */
     .stock-row {
-        background: white;
-        border-bottom: 1px solid #F2F4F7;
-        padding: 15px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: background 0.2s;
+        background: white; border-bottom: 1px solid #F2F4F7; padding: 15px 20px;
+        display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;
     }
     .stock-row:hover { background: #F9FAFB; }
     .stock-info-main { display: flex; flex-direction: column; }
     .stock-name { font-size: 16px; font-weight: 600; color: #1A1A1A; }
     .stock-code { font-size: 12px; color: #ADB5BD; }
-    
     .stock-price-area { text-align: right; }
     .current-price { font-size: 16px; font-weight: 700; }
     .price-change { font-size: 12px; font-weight: 500; }
 
-    .up { color: #E52E2E; } /* 상승: 빨강 */
-    .down { color: #0055FF; } /* 하락: 파랑 */
+    .up { color: #E52E2E; } 
+    .down { color: #0055FF; }
 
     /* 푸터 */
-    .footer {
-        padding: 40px 20px;
-        text-align: center;
-        font-size: 12px;
-        color: #8B95A1;
-        background: #F9FAFB;
-        margin-top: 50px;
-    }
-
-    /* Streamlit 기본 요소 제거 */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
+    .footer { padding: 40px 20px; text-align: center; font-size: 12px; color: #8B95A1; background: #F9FAFB; margin-top: 50px; }
     
-    <script>
-    function updateClock() {
-        const now = new Date();
-        const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-        document.getElementById('live-clock-text').innerText = now.toLocaleString('ko-KR', options);
-    }
-    setInterval(updateClock, 1000);
-    </script>
+    /* 기존 숨김 코드 유지 (더 강력하게 적용됨) */
+    #MainMenu {visibility: hidden;} footer {visibility: hidden;} 
+    </style>
     """, unsafe_allow_html=True)
 
 # --- 3. 데이터 로직 (기존 로직 유지) ---
@@ -266,6 +224,7 @@ st.markdown("""
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

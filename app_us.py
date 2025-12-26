@@ -15,7 +15,7 @@ except ImportError:
     st.error("필수 라이브러리가 설치되지 않았습니다. 터미널에 'pip install pykrx yfinance ta'를 입력하세요.")
     st.stop()
 
-# --- 1. 페이지 설정 (사이드바 기본 숨김) ---
+# --- 1. 페이지 설정 (사이드바 숨김) ---
 st.set_page_config(page_title="MAGIC STOCK GLOBAL", layout="wide", initial_sidebar_state="collapsed")
 
 korea = pytz.timezone("Asia/Seoul")
@@ -85,7 +85,6 @@ KR_TARGET_DATE = get_latest_business_day()
 
 # [국내] 로직
 def get_kr_index(market_name):
-    if market_name == "KONEX": return 0, 0, 0
     ticker = "1001" if market_name == "KOSPI" else "2001"
     try:
         df = stock.get_index_ohlcv_by_date((datetime.datetime.strptime(KR_TARGET_DATE, "%Y%m%d")-datetime.timedelta(days=7)).strftime("%Y%m%d"), KR_TARGET_DATE, ticker)
@@ -141,7 +140,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# 탭 생성 (사이드바 대신 상단 탭 사용)
+# 탭 생성
 tab_kr, tab_us = st.tabs(["🇰🇷 국내 증시 (KRX)", "🇺🇸 미국 증시 (US)"])
 
 # === [TAB 1] 국내 증시 ===
@@ -162,13 +161,14 @@ with tab_kr:
             """, unsafe_allow_html=True)
 
         st.markdown('<div class="section-title">AI 분석</div>', unsafe_allow_html=True)
-        kr_market = st.radio("시장 선택", ["KOSPI", "KOSDAQ", "KONEX"], horizontal=True, key="kr_radio")
+        # [수정] KONEX 제거
+        kr_market = st.radio("시장 선택", ["KOSPI", "KOSDAQ"], horizontal=True, key="kr_radio")
         
         if st.button("🚀 국내 종목 분석 시작", key="btn_kr"):
             with st.spinner(f"{kr_market} 전 종목 스캔 중... (기준일: {KR_TARGET_DATE})"):
                 try:
                     base = stock.get_market_price_change_by_ticker(KR_TARGET_DATE, KR_TARGET_DATE, market=kr_market)
-                    vol_cut = 10000 if kr_market == "KONEX" else 100000
+                    vol_cut = 100000 # [수정] 기본 거래량 10만 이상
                     filtered = base[(base['등락률'] >= 0.5) & (base['거래량'] > vol_cut)].sort_values('거래량', ascending=False).head(30)
                     
                     picks = []
@@ -261,8 +261,10 @@ with tab_us:
                 else: st.info("강력 매수 신호가 포착되지 않았습니다.")
 
     with col2:
-        st.markdown('<div class="section-title">관심 종목</div>', unsafe_allow_html=True)
-        watch_list = ['NVDA', 'TSLA', 'AAPL', 'SOXL', 'TQQQ']
+        st.markdown('<div class="section-title">관심 종목 (Top 10)</div>', unsafe_allow_html=True)
+        # [수정] 관심 종목 10개로 확대
+        watch_list = ['NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD', 'SOXL', 'TQQQ']
+        
         for t in watch_list:
             try:
                 df = yf.Ticker(t).history(period="2d")

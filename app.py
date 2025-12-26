@@ -10,7 +10,7 @@ from ta.volatility import BollingerBands
 # --- 1. 페이지 설정 ---
 st.set_page_config(page_title="MAGIC STOCK.", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 2. 증권사 스타일 CSS (High-Density Professional UI) ---
+# --- 2. 증권사 스타일 CSS 및 실시간 시계 스크립트 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
@@ -28,8 +28,8 @@ st.markdown("""
     /* 상단 GNB 스타일 */
     .top-nav {
         background-color: #FFFFFF;
-        padding: 15px 25px;
-        border-bottom: 1px solid #E5E8EB;
+        padding: 20px 25px; /* 패딩 약간 증가 */
+        border-bottom: 2px solid #E5E8EB;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -37,18 +37,25 @@ st.markdown("""
         top: 0;
         z-index: 999;
     }
+    
+    /* 타이틀 크기 대폭 확대 */
     .brand-name {
-        font-size: 20px;
-        font-weight: 700;
+        font-size: 36px; /* 20px -> 36px로 확대 */
+        font-weight: 800;
         color: #0052CC; /* 증권사 블루 */
-        letter-spacing: -0.5px;
+        letter-spacing: -1px;
     }
 
     /* 실시간 시계 */
     .live-clock {
-        font-size: 14px;
-        font-weight: 500;
-        color: #6B7684;
+        font-size: 16px;
+        font-weight: 600;
+        color: #4E5968;
+        background: #F9FAFB;
+        padding: 8px 15px;
+        border-radius: 8px;
+        border: 1px solid #E5E8EB;
+        font-variant-numeric: tabular-nums; /* 숫자 너비 고정 */
     }
 
     /* 섹션 제목 스타일 */
@@ -73,7 +80,7 @@ st.markdown("""
     .index-value { font-size: 20px; font-weight: 700; margin: 4px 0; }
     .index-change { font-size: 13px; font-weight: 600; }
 
-    /* 분석 버튼: 증권사 메인 버튼 스타일 */
+    /* 분석 버튼 */
     .stButton>button {
         width: 100% !important;
         height: 50px;
@@ -86,7 +93,7 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     }
 
-    /* 종목 리스트 스타일 (MTS 스타일) */
+    /* 종목 리스트 스타일 */
     .stock-row {
         background: white;
         border-bottom: 1px solid #F2F4F7;
@@ -105,8 +112,8 @@ st.markdown("""
     .current-price { font-size: 16px; font-weight: 700; }
     .price-change { font-size: 12px; font-weight: 500; }
 
-    .up { color: #E52E2E; } /* 상승: 빨강 */
-    .down { color: #0055FF; } /* 하락: 파랑 */
+    .up { color: #E52E2E; }
+    .down { color: #0055FF; }
 
     /* 푸터 */
     .footer {
@@ -123,13 +130,30 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     </style>
-    
+
+    <div class="top-nav">
+        <div class="brand-name">MAGIC STOCK.</div>
+        <div id="live-clock-text" class="live-clock">로딩 중...</div>
+    </div>
+
     <script>
     function updateClock() {
         const now = new Date();
-        const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-        document.getElementById('live-clock-text').innerText = now.toLocaleString('ko-KR', options);
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        
+        const format = `${yyyy}.${mm}.${dd} ${hh}:${min}:${ss}`;
+        const clockElement = document.getElementById('live-clock-text');
+        if (clockElement) {
+            clockElement.innerText = format;
+        }
     }
+    // 즉시 실행 및 1초마다 업데이트
+    updateClock();
     setInterval(updateClock, 1000);
     </script>
     """, unsafe_allow_html=True)
@@ -172,15 +196,7 @@ def analyze_stock(ticker, today):
 
 # --- 4. 메인 UI 구성 ---
 
-# 상단 네비게이션 바
-st.markdown(f"""
-    <div class="top-nav">
-        <div class="brand-name">MAGIC STOCK.</div>
-        <div id="live-clock-text" class="live-clock">{datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S')}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# 메인 레이아웃
+# 메인 레이아웃 (GNB는 CSS 파트에서 이미 출력됨)
 main_col1, main_col2 = st.columns([2, 1])
 
 with main_col1:
@@ -241,34 +257,26 @@ with main_col1:
 
 with main_col2:
     st.markdown('<div class="section-title">거래량 TOP 10</div>', unsafe_allow_html=True)
-    # 간단한 거래량 순위 테이블
-    df_vol = stock.get_market_ohlcv_by_ticker(datetime.datetime.now().strftime("%Y%m%d"), market=m_type)
-    top_vol = df_vol.sort_values('거래량', ascending=False).head(10)
-    top_vol['종목명'] = [stock.get_market_ticker_name(t) for t in top_vol.index]
-    
-    for idx, row in top_vol.iterrows():
-        st.markdown(f"""
-            <div style="display:flex; justify-content:space-between; padding: 10px 5px; border-bottom: 1px solid #E5E8EB;">
-                <span style="font-size:14px; font-weight:500;">{row['종목명']}</span>
-                <span style="font-size:14px; color:#6B7684;">{row['거래량']//10000:,}만</span>
-            </div>
-        """, unsafe_allow_html=True)
+    try:
+        df_vol = stock.get_market_ohlcv_by_ticker(datetime.datetime.now().strftime("%Y%m%d"), market=m_type)
+        top_vol = df_vol.sort_values('거래량', ascending=False).head(10)
+        top_vol['종목명'] = [stock.get_market_ticker_name(t) for t in top_vol.index]
+        
+        for idx, row in top_vol.iterrows():
+            st.markdown(f"""
+                <div style="display:flex; justify-content:space-between; padding: 10px 5px; border-bottom: 1px solid #E5E8EB;">
+                    <span style="font-size:14px; font-weight:500;">{row['종목명']}</span>
+                    <span style="font-size:14px; color:#6B7684;">{row['거래량']//10000:,}만</span>
+                </div>
+            """, unsafe_allow_html=True)
+    except:
+        st.write("데이터를 불러올 수 없습니다.")
 
 # --- 5. 푸터 ---
 st.markdown("""
     <div class="footer">
         본 서비스에서 제공하는 모든 정보는 투자 참고 사항이며,<br>
         최종 투자 판단의 책임은 본인에게 있습니다.<br><br>
-        Copylight ⓒ 2026 Bohemian All rights reserved.
+        Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
-
-
-
-
-
-
-
-
-
-

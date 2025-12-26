@@ -41,8 +41,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. 로직 함수 정의 ---
-
 # --- 3. 로직 함수 정의 (신호등 & 수급분석 합본) ---
 
 # [1] 시장 지수 신호등 (정상 작동 버전)
@@ -120,24 +118,33 @@ if st.button('🔍 매수종목찾기'):
         # 필터: 상승률 3%~25%, 거래량 상위
         filtered = df_base[(df_base['등락률'] >= 3.0) & (df_base['거래량'] > 100000)].sort_values('거래량', ascending=False).head(15)
 
-    # B. 결과 리스트업
+    # B. 결과 리스트업 (수급 데이터 추출 추가)
     picks = []
     for ticker in filtered.index:
         name = stock.get_market_ticker_name(ticker)
         score = analyze_stock(ticker, today_str)
-        if score >= 4:
+        
+        # 점수 기준 5점 이상 (수급 점수 포함)
+        if score >= 5: 
+            # 실제로 외국인/기관이 몇 주 샀는지 데이터를 가져옵니다
+            df_inv = stock.get_market_net_purchases_of_equities_by_ticker(today_str, today_str, ticker)
+            f_buy = df_inv.loc[ticker, '외국인'] if not df_inv.empty else 0
+            i_buy = df_inv.loc[ticker, '기관합계'] if not df_inv.empty else 0
+            
             price = filtered.loc[ticker, '종가']
             picks.append({
                 '종목명': name,
                 '현재가': price,
                 '등락률': filtered.loc[ticker, '등락률'],
                 '점수': score,
+                '외국인': f_buy,   # 표에 숫자로 표시
+                '기관': i_buy,     # 표에 숫자로 표시
                 '목표가(+3%)': int(price * 1.03),
                 '상세정보': f"https://finance.naver.com/item/main.naver?code={ticker}"
             })
 
-    # C. 추천 종목 출력
-    st.subheader("🎯 AI 추천종목")
+    # C. 추천 종목 출력 (UI에 수급 컬럼 추가)
+    st.subheader("🎯 AI PREMIUM PICKS (수급 분석 포함)")
     
     if picks:
         df_picks = pd.DataFrame(picks).sort_values('점수', ascending=False).head(5)
@@ -147,6 +154,8 @@ if st.button('🔍 매수종목찾기'):
                 "점수": st.column_config.ProgressColumn("상승잠재력", min_value=0, max_value=11, format="%d"),
                 "현재가": st.column_config.NumberColumn(format="₩%d"),
                 "등락률": st.column_config.NumberColumn(format="%.2f%%"),
+                "외국인": st.column_config.NumberColumn("외국인(순매수)", format="%d"), 
+                "기관": st.column_config.NumberColumn("기관(순매수)", format="%d"),
                 "목표가(+3%)": st.column_config.NumberColumn(format="₩%d"),
                 "상세정보": st.column_config.LinkColumn("네이버증권", display_text="열기")
             },
@@ -168,7 +177,3 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
-
-
-
-

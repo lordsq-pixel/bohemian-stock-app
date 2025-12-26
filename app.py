@@ -5,6 +5,7 @@ import datetime
 import numpy as np
 from ta.momentum import RSIIndicator
 from ta.trend import SMAIndicator
+from ta.volatility import BollingerBands
 
 # --- 1. 페이지 설정 및 초기화 ---
 st.set_page_config(page_title="BOHEMIAN STOCK", layout="wide", initial_sidebar_state="collapsed")
@@ -78,38 +79,48 @@ def get_market_status(market_name):
 # 종목 상세 분석
 def analyze_stock(ticker, today):
     try:
-        # 최근 60일치 데이터를 가져와서 분석 (이평선 및 거래량 평균 계산용)
+        # 최근 60일치 데이터를 가져옵니다 (이평선 및 BB 계산용)
         start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=60)).strftime("%Y%m%d")
         df = stock.get_market_ohlcv_by_date(start, today, ticker)
         
-        if len(df) < 20: return 0
+        if len(df) < 30: return 0
         
-        curr = df['종가'].iloc[-1]
+        # --- [추가] 볼린저 밴드 계산 (20일, 2표준편차) ---
+        indicator_bb = BollingerBands(close=df["종가"], window=20, window_dev=2)
+        df['bb_low'] = indicator_bb.bollinger_lband()   # 하단밴드
+        
+        curr_close = df['종가'].iloc[-1]
+        curr_low = df['저가'].iloc[-1]
         prev_close = df['종가'].iloc[-2]
-        volume_curr = df['거래량'].iloc[-1]
-        volume_avg = df['거래량'].iloc[-20:-1].mean() # 최근 20일 평균 거래량
+        prev_low = df['저가'].iloc[-2]
         
-        # 이동평균선 계산
-        sma5 = df['종가'].rolling(window=5).mean().iloc[-1]
-        sma20 = df['종가'].rolling(window=20).mean().iloc[-1]
+        # 기타 지표들 (RSI, SMA)
+        rsi = RSIIndicator(close=df["종가"], window=14, fillna=True).rsi().iloc[-1]
+        sma5 = SMAIndicator(close=df["종가"], window=5, fillna=True).sma_indicator().iloc[-1]
         
         score = 0
+
+        # --- [핵심] 볼린저 밴드 하단 반등 로직 (가점 4점) ---
+        # 어제나 오늘 '저가'가 하단 밴드 아래로 내려갔다가 (과매도), 
+        # 현재 종가가 하단 밴드 위로 올라오는 중인지 확인
+        touched_bottom = (prev_low <= df['bb_low'].iloc[-2]) or (curr_low <= df['bb_low'].iloc[-1])
+        is_rebounding = curr_close > df['bb_low'].iloc[-1]
         
-        # [신호 1] 거래량 급증 (가장 중요)
-        # 평균 거래량보다 현재 거래량이 이미 80% 이상 올라왔다면 세력 유입 가능성
-        if volume_curr > volume_avg * 1.2: score += 3
+        if touched_bottom and is_rebounding:
+            score += 4  # 바닥권 반등 시 강력한 점수 부여
+
+        # --- 추가 점수 (추세 확인) ---
+        if curr_close > sma5: score += 1      # 5일선 위 (단기 추세 회복)
+        if 30 <= rsi <= 50: score += 2       # RSI가 너무 낮지 않으면서 상승 여력 있음
         
-        # [신호 2] 골든크로스 혹은 정배열 초기
-        # 5일선이 20일선 위에 있거나 막 돌파하려는 순간
-        if sma5 >= box_sma20 * 0.98: score += 2 
-        
-        # [신호 3] 바닥권 탈출
-        # 현재가가 최근 20일 최고가 대비 너무 높지 않은 상태 (이미 폭등한 종목 제외)
-        high_20 = df['고가'].iloc[-20:].max()
-        if curr < high_20 * 1.05: score += 2
+        # 거래량 확인
+        volume_curr = df['거래량'].iloc[-1]
+        volume_avg = df['거래량'].iloc[-20:-1].mean()
+        if volume_curr > volume_avg * 1.1: score += 1 # 평소보다 거래량이 늘면 신뢰도 상승
         
         return score
-    except: return -1
+    except:
+        return -1
 
 # --- 4. 메인 UI ---
 
@@ -120,7 +131,7 @@ st.markdown('<H4 class="sub-title">[ 09:00 - 15:30 ]</H4>', unsafe_allow_html=Tr
 market_type = st.sidebar.selectbox("📊 시장선택", ["KOSPI", "KOSDAQ"])
 today_str = datetime.datetime.now().strftime("%Y%m%d")
 
-if st.button('🔍 초동 매수 종목 찾기'):
+if st.button('🔍 매수종목찾기'):
     # A. 시장 신호등
     title, desc, bg, txt = get_market_status(market_type)
     st.markdown(f'<div class="signal-box" style="background-color:{bg}; color:{txt}; border:1px solid {txt}22;">'
@@ -133,8 +144,8 @@ if st.button('🔍 초동 매수 종목 찾기'):
         filtered = df_base[
             (df_base['등락률'] >= 0.5) & 
             (df_base['등락률'] <= 2.5) & 
-            (df_base['거래량'] > 50000)
-        ].sort_values('거래량', ascending=False).head(30) # 후보군을 30개로 확대
+            (df_base['거래량'] > 100000)
+        ].sort_values('거래량', ascending=False).head(15) # 후보군을 30개로 확대
 
     # B. 결과 리스트업
     picks = []
@@ -184,5 +195,6 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 

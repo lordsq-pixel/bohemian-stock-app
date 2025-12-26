@@ -10,12 +10,12 @@ from ta.volatility import BollingerBands
 # --- 1. 페이지 설정 ---
 st.set_page_config(page_title="MAGIC STOCK.", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 2. 증권사 스타일 CSS 및 실시간 시계 스크립트 ---
+# --- 2. 증권사 스타일 CSS (타이틀 크기 대폭 확대 및 시계 로직 개선) ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
 
-    /* 전체 배경: 증권사 특유의 밝은 회색 배경 */
+    /* 전체 배경 */
     .stApp {
         background-color: #F2F4F7;
         color: #1A1A1A;
@@ -28,137 +28,108 @@ st.markdown("""
     /* 상단 GNB 스타일 */
     .top-nav {
         background-color: #FFFFFF;
-        padding: 20px 25px; /* 패딩 약간 증가 */
-        border-bottom: 2px solid #E5E8EB;
+        padding: 25px 30px; 
+        border-bottom: 3px solid #0052CC; /* 하단 포인트를 더 굵게 */
         display: flex;
         justify-content: space-between;
         align-items: center;
         position: sticky;
         top: 0;
         z-index: 999;
+        margin-bottom: 20px;
     }
     
-    /* 타이틀 크기 대폭 확대 */
+    /* 타이틀 크기 대폭 확대 (요청 반영) */
     .brand-name {
-        font-size: 36px; /* 20px -> 36px로 확대 */
+        font-size: 48px; /* 기존보다 훨씬 크게 확대 */
         font-weight: 800;
-        color: #0052CC; /* 증권사 블루 */
-        letter-spacing: -1px;
+        color: #0052CC;
+        letter-spacing: -2px;
+        line-height: 1;
     }
 
-    /* 실시간 시계 */
+    /* 실시간 시계 디자인 개선 */
     .live-clock {
-        font-size: 16px;
-        font-weight: 600;
-        color: #4E5968;
-        background: #F9FAFB;
-        padding: 8px 15px;
-        border-radius: 8px;
-        border: 1px solid #E5E8EB;
-        font-variant-numeric: tabular-nums; /* 숫자 너비 고정 */
-    }
-
-    /* 섹션 제목 스타일 */
-    .section-title {
         font-size: 18px;
         font-weight: 700;
-        color: #1A1A1A;
-        margin: 25px 0 15px 0;
-        padding-left: 10px;
-        border-left: 4px solid #0052CC;
-    }
-
-    /* 시장 지수 카드 */
-    .index-card {
-        background: white;
+        color: #333D4B;
+        background: #F9FAFB;
+        padding: 10px 20px;
         border-radius: 12px;
-        padding: 15px;
         border: 1px solid #E5E8EB;
-        text-align: left;
+        font-family: 'Courier New', monospace; /* 숫자 간격 고정 */
+        min-width: 220px;
+        text-align: center;
     }
-    .index-name { font-size: 13px; color: #6B7684; font-weight: 500; }
-    .index-value { font-size: 20px; font-weight: 700; margin: 4px 0; }
-    .index-change { font-size: 13px; font-weight: 600; }
 
-    /* 분석 버튼 */
+    /* 섹션 제목 */
+    .section-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1A1A1A;
+        margin: 30px 0 15px 0;
+        padding-left: 12px;
+        border-left: 5px solid #0052CC;
+    }
+
+    /* 지수 카드 및 기타 스타일 유지 */
+    .index-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #E5E8EB; }
+    .index-name { font-size: 14px; color: #6B7684; font-weight: 600; }
+    .index-value { font-size: 24px; font-weight: 700; margin: 5px 0; }
+    .index-change { font-size: 14px; font-weight: 600; }
+
     .stButton>button {
-        width: 100% !important;
-        height: 50px;
-        background: #0052CC !important;
-        color: #FFFFFF !important;
-        border: none !important;
-        border-radius: 8px !important;
-        font-size: 16px !important;
-        font-weight: 600 !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        width: 100% !important; height: 55px;
+        background: #0052CC !important; color: #FFFFFF !important;
+        border-radius: 12px !important; font-size: 18px !important; font-weight: 700 !important;
     }
 
-    /* 종목 리스트 스타일 */
-    .stock-row {
-        background: white;
-        border-bottom: 1px solid #F2F4F7;
-        padding: 15px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: background 0.2s;
-    }
-    .stock-row:hover { background: #F9FAFB; }
-    .stock-info-main { display: flex; flex-direction: column; }
-    .stock-name { font-size: 16px; font-weight: 600; color: #1A1A1A; }
-    .stock-code { font-size: 12px; color: #ADB5BD; }
-    
-    .stock-price-area { text-align: right; }
-    .current-price { font-size: 16px; font-weight: 700; }
-    .price-change { font-size: 12px; font-weight: 500; }
-
+    .stock-row { background: white; border-bottom: 1px solid #F2F4F7; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .stock-name { font-size: 17px; font-weight: 700; }
     .up { color: #E52E2E; }
     .down { color: #0055FF; }
 
-    /* 푸터 */
-    .footer {
-        padding: 40px 20px;
-        text-align: center;
-        font-size: 12px;
-        color: #8B95A1;
-        background: #F9FAFB;
-        margin-top: 50px;
-    }
-
-    /* Streamlit 기본 요소 제거 */
+    .footer { padding: 40px; text-align: center; font-size: 13px; color: #8B95A1; background: #F9FAFB; margin-top: 50px; }
+    
+    /* 기본 요소 제거 */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     </style>
+    """, unsafe_allow_html=True)
 
+# --- 3. 실시간 시계 및 타이틀 출력 (HTML과 Script를 결합하여 오류 방지) ---
+st.markdown("""
     <div class="top-nav">
         <div class="brand-name">MAGIC STOCK.</div>
-        <div id="live-clock-text" class="live-clock">로딩 중...</div>
+        <div id="live-clock-target" class="live-clock">시간 계산 중...</div>
     </div>
 
     <script>
-    function updateClock() {
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const hh = String(now.getHours()).padStart(2, '0');
-        const min = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        
-        const format = `${yyyy}.${mm}.${dd} ${hh}:${min}:${ss}`;
-        const clockElement = document.getElementById('live-clock-text');
-        if (clockElement) {
-            clockElement.innerText = format;
+    (function() {
+        function updateClock() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            const timeString = `${year}.${month}.${day} ${hours}:${minutes}:${seconds}`;
+            const element = document.getElementById('live-clock-target');
+            if (element) {
+                element.innerText = timeString;
+            }
         }
-    }
-    // 즉시 실행 및 1초마다 업데이트
-    updateClock();
-    setInterval(updateClock, 1000);
+        updateClock();
+        setInterval(updateClock, 1000);
+    })();
     </script>
     """, unsafe_allow_html=True)
 
-# --- 3. 데이터 로직 (기존 로직 유지) ---
+
+# --- 4. 데이터 로직 (기존 유지) ---
 
 def get_market_data(market_name):
     ticker = "1001" if market_name == "KOSPI" else "2001"
@@ -194,9 +165,8 @@ def analyze_stock(ticker, today):
         return score
     except: return -1
 
-# --- 4. 메인 UI 구성 ---
+# --- 5. 메인 UI 구성 ---
 
-# 메인 레이아웃 (GNB는 CSS 파트에서 이미 출력됨)
 main_col1, main_col2 = st.columns([2, 1])
 
 with main_col1:
@@ -215,12 +185,12 @@ with main_col1:
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown('<div class="section-title">국내시장 선택</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">국내시장 분석</div>', unsafe_allow_html=True)
     m_type = st.radio("시장 선택", ["KOSPI", "KOSDAQ"], horizontal=True, label_visibility="collapsed")
     
-    if st.button('AI 추천종목'):
+    if st.button('실시간 AI 추천종목 탐색'):
         today_str = datetime.datetime.now().strftime("%Y%m%d")
-        with st.spinner('AI 퀀트 알고리즘 검색중'):
+        with st.spinner('전 종목 퀀트 알고리즘 스캔 중...'):
             df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=m_type)
             filtered = df_base[(df_base['등락률'] >= 0.5) & (df_base['거래량'] > 100000)].sort_values('거래량', ascending=False).head(20)
 
@@ -235,48 +205,48 @@ with main_col1:
                     })
 
             if picks:
-                st.markdown('<div style="background: white; border-radius: 12px; overflow: hidden; border: 1px solid #E5E8EB;">', unsafe_allow_html=True)
+                st.markdown('<div style="background: white; border-radius: 12px; overflow: hidden; border: 1px solid #E5E8EB; margin-top:10px;">', unsafe_allow_html=True)
                 for p in sorted(picks, key=lambda x: x['score'], reverse=True):
                     color_class = "up" if p['rate'] > 0 else "down"
                     st.markdown(f"""
                         <div class="stock-row">
                             <div class="stock-info-main">
                                 <span class="stock-name">{p['name']}</span>
-                                <span class="stock-code">{p['ticker']} | <b style="color:#0052CC">SCORE {p['score']}</b></span>
+                                <span style="font-size:13px; color:#ADB5BD;">{p['ticker']} | <b style="color:#0052CC">강력매수 SCORE {p['score']}</b></span>
                             </div>
-                            <div class="stock-price-area">
-                                <div class="current-price {color_class}">{p['price']:,}</div>
+                            <div style="text-align:right;">
+                                <div class="current-price {color_class}">{p['price']:,}원</div>
                                 <div class="price-change {color_class}">{'+' if p['rate'] > 0 else ''}{p['rate']:.2f}%</div>
-                                <div style="font-size:11px; color:#34C759; margin-top:2px;">Target: {p['target']:,}</div>
+                                <div style="font-size:11px; color:#34C759; margin-top:4px; font-weight:600;">목표가: {p['target']:,}원</div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
             else:
-                st.info("현재 분석 기준을 충족하는 종목이 없습니다.")
+                st.info("현재 분석 기준(Score 4점 이상)을 충족하는 종목이 없습니다.")
 
 with main_col2:
     st.markdown('<div class="section-title">거래량 TOP 10</div>', unsafe_allow_html=True)
     try:
         df_vol = stock.get_market_ohlcv_by_ticker(datetime.datetime.now().strftime("%Y%m%d"), market=m_type)
         top_vol = df_vol.sort_values('거래량', ascending=False).head(10)
-        top_vol['종목명'] = [stock.get_market_ticker_name(t) for t in top_vol.index]
         
-        for idx, row in top_vol.iterrows():
+        for ticker, row in top_vol.iterrows():
+            name = stock.get_market_ticker_name(ticker)
             st.markdown(f"""
-                <div style="display:flex; justify-content:space-between; padding: 10px 5px; border-bottom: 1px solid #E5E8EB;">
-                    <span style="font-size:14px; font-weight:500;">{row['종목명']}</span>
-                    <span style="font-size:14px; color:#6B7684;">{row['거래량']//10000:,}만</span>
+                <div style="display:flex; justify-content:space-between; padding: 14px 5px; border-bottom: 1px solid #E5E8EB;">
+                    <span style="font-size:15px; font-weight:600;">{name}</span>
+                    <span style="font-size:14px; color:#0052CC; font-weight:700;">{row['거래량']//10000:,}만 주</span>
                 </div>
             """, unsafe_allow_html=True)
     except:
-        st.write("데이터를 불러올 수 없습니다.")
+        st.write("장 개시 전이거나 데이터를 불러올 수 없습니다.")
 
-# --- 5. 푸터 ---
+# --- 6. 푸터 ---
 st.markdown("""
     <div class="footer">
-        본 서비스에서 제공하는 모든 정보는 투자 참고 사항이며,<br>
-        최종 투자 판단의 책임은 본인에게 있습니다.<br><br>
+        본 서비스의 알고리즘은 볼린저밴드 하단 이탈 및 RSI 과매도 구간을 분석합니다.<br>
+        모든 투자의 책임은 투자자 본인에게 있습니다.<br><br>
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)

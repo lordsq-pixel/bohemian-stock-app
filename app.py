@@ -15,17 +15,6 @@ st.set_page_config(page_title="MAGIC STOCK", layout="wide", initial_sidebar_stat
 # --- 2. 증권사 스타일 CSS (High-Density Professional UI) ---
 st.markdown("""
     <style>
-    /* 📱 모바일에서 상단 공백 줄이기 */
-@media (max-width: 768px) {
-    .top-nav {
-        padding-top: 6px !important;
-        padding-bottom: 6px !important;
-    }
-    .stApp {
-        padding-top: 0px !important;
-    }
-}
-
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
     
     /* 전체 배경: 증권사 특유의 밝은 회색 배경 */
@@ -277,6 +266,7 @@ st.markdown("""
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

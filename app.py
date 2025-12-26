@@ -124,6 +124,11 @@ def analyze_stock(ticker, today):
         return -1
 
 # --- 4. 메인 UI ---
+st.markdown('<H2 class="main-title">📊 MAGIC STOCK. </H2>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title"># AI 실시간 빅데이터 분석 기반 #</p>', unsafe_allow_html=True)
+st.markdown('<H4 class="sub-title">[ 09:00 - 15:30 ]</H4>', unsafe_allow_html=True)
+
+# --- 4. 메인 UI 추가 ---
 col1, col2 = st.columns(2)
 
 with col1:
@@ -132,7 +137,7 @@ with col1:
         pass
 
 with col2:
-    if st.button('⚡초단타 스켈핑'):
+    if st.button('⚡ 초단타 스켈핑'):
         with st.spinner('실시간 수급 폭발 종목 검색 중...'):
             # 1%~3%대 종목 중 실시간 거래량이 터진 종목 필터링
             df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=market_type)
@@ -161,12 +166,8 @@ with col2:
                 st.table(pd.DataFrame(scalping_picks))
             else:
                 st.info("현재 급격한 수급이 들어오는 종목이 없습니다.")
-                
 
-
-st.markdown('<H2 class="main-title">📊 MAGIC STOCK. </H2>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title"># AI 실시간 빅데이터 분석 기반 #</p>', unsafe_allow_html=True)
-st.markdown('<H4 class="sub-title">[ 09:00 - 15:30 ]</H4>', unsafe_allow_html=True)
+# --- 4. 메인 UI 추가 여기까지---
 
 market_type = st.sidebar.selectbox("📊 시장선택", ["KOSPI", "KOSDAQ"])
 today_str = datetime.datetime.now().strftime("%Y%m%d")
@@ -235,6 +236,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

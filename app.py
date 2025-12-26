@@ -258,10 +258,11 @@ with main_col2:
 st.markdown("""
     <div class="footer">
         본 서비스에서 제공하는 모든 정보는 투자 참고 사항이며,<br>
-        데이터 오류나 지연이 발생할 수 있습니다. 최종 투자 판단의 책임은 본인에게 있습니다.<br><br>
+        최종 투자 판단의 책임은 본인에게 있습니다.<br><br>
         Copylight ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

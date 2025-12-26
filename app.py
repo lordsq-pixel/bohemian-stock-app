@@ -6,6 +6,7 @@ import numpy as np
 from ta.momentum import RSIIndicator
 from ta.trend import SMAIndicator
 from ta.volatility import BollingerBands
+from ta.momentum import StochasticOscillator
 
 # --- 1. 페이지 설정 및 초기화 ---
 st.set_page_config(page_title="BOHEMIAN STOCK", layout="wide", initial_sidebar_state="collapsed")
@@ -123,6 +124,45 @@ def analyze_stock(ticker, today):
         return -1
 
 # --- 4. 메인 UI ---
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button('🔍 스윙/중장기 찾기'):
+        # 기존 볼린저 밴드 로직 실행
+        pass
+
+with col2:
+    if st.button('⚡초단타 스켈핑'):
+        with st.spinner('실시간 수급 폭발 종목 검색 중...'):
+            # 1%~3%대 종목 중 실시간 거래량이 터진 종목 필터링
+            df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=market_type)
+            
+            # 스켈핑은 등락률이 너무 높지 않으면서(상승 초입) 거래 대금이 몰리는 종목이 타겟입니다.
+            filtered = df_base[
+                (df_base['등락률'] >= 1.0) & 
+                (df_base['등락률'] <= 4.0) & 
+                (df_base['거래량'] > 200000)
+            ].sort_values('거래량', ascending=False).head(10)
+
+            scalping_picks = []
+            for ticker in filtered.index:
+                score = analyze_scalping(ticker) # 스켈핑 분석 함수 호출
+                if score >= 5:
+                    name = stock.get_market_ticker_name(ticker)
+                    scalping_picks.append({
+                        '종목명': name,
+                        '현재가': filtered.loc[ticker, '종가'],
+                        '실시간강도': score,
+                        '네이버': f"https://finance.naver.com/item/main.naver?code={ticker}"
+                    })
+            
+            if scalping_picks:
+                st.success("⚡ 수급 포착! 단기 매수 타점입니다.")
+                st.table(pd.DataFrame(scalping_picks))
+            else:
+                st.info("현재 급격한 수급이 들어오는 종목이 없습니다.")
+                
+
 
 st.markdown('<H2 class="main-title">📊 MAGIC STOCK. </H2>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title"># AI 실시간 빅데이터 분석 기반 #</p>', unsafe_allow_html=True)
@@ -195,6 +235,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

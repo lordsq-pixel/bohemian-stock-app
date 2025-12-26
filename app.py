@@ -75,21 +75,37 @@ def get_market_status(market_name):
     except Exception as e:
         return "⚪ 확인 불가", f"연결 오류: {str(e)}", "#F9F9F9", "#9E9E9E"
 
-# 종목 상세 분석
+# 종목 상세 분석 (기술적 지표 + 수급 분석 추가)
 def analyze_stock(ticker, today):
     try:
-        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=90)).strftime("%Y%m%d")
+        # 데이터 안정성을 위해 넉넉하게 100일치 조회
+        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=100)).strftime("%Y%m%d")
         df = stock.get_market_ohlcv_by_date(start, today, ticker)
+        
         if len(df) < 30: return 0
+        
         curr = df['종가'].iloc[-1]
         high = df['고가'].iloc[-1]
         sma5 = SMAIndicator(close=df["종가"], window=5, fillna=True).sma_indicator().iloc[-1]
         rsi = RSIIndicator(close=df["종가"], window=14, fillna=True).rsi().iloc[-1]
         
         score = 0
+        # [기존 로직]
         if curr > sma5: score += 2
         if 50 <= rsi <= 70: score += 3
         if curr >= high * 0.99: score += 2
+        
+        # [추가 로직] 외국인/기관 수급 분석 (최근 1일 기준)
+        # 매수/매도 수량 데이터를 가져옵니다.
+        df_investor = stock.get_market_net_purchases_of_equities_by_ticker(today, today, ticker)
+        
+        if not df_investor.empty:
+            foreigner = df_investor.loc[ticker, '외국인']
+            institution = df_investor.loc[ticker, '기관합계']
+            
+            if foreigner > 0: score += 2    # 외국인 순매수 시 +2점
+            if institution > 0: score += 2  # 기관 순매수 시 +2점
+            
         return score
     except: return -1
 
@@ -162,5 +178,6 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 

@@ -1,3 +1,5 @@
+import pytz
+korea = pytz.timezone("Asia/Seoul")
 import streamlit as st
 from pykrx import stock
 import pandas as pd
@@ -262,6 +264,7 @@ st.markdown("""
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

@@ -91,7 +91,7 @@ st.markdown('<H4 class="sub-title">[ 09:00 - 15:30 ]</H4>', unsafe_allow_html=Tr
 
 market_type = st.sidebar.selectbox(
     "📊 시장선택",
-    ["코스피", "코스닥"]
+    ["KOSPI", "KOSDAQ"]
 )
 
 market_map = {
@@ -167,6 +167,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

@@ -202,7 +202,7 @@ with main_col1:
     st.markdown('<div class="section-title">AI QUANT ANALYSIS</div>', unsafe_allow_html=True)
     m_type = st.radio("시장 선택", ["KOSPI", "KOSDAQ"], horizontal=True, label_visibility="collapsed")
     
-    if st.button('실시간 유망 종목 스캔'):
+    if st.button('AI 실시간 추천 매수종목'):
         today_str = datetime.datetime.now().strftime("%Y%m%d")
         with st.spinner('증권사 퀀트 알고리즘 가동 중...'):
             df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=m_type)
@@ -240,7 +240,7 @@ with main_col1:
                 st.info("현재 분석 기준을 충족하는 종목이 없습니다.")
 
 with main_col2:
-    st.markdown('<div class="section-title">VOLUME RANKING</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">실시간 거래량 TOP 10</div>', unsafe_allow_html=True)
     # 간단한 거래량 순위 테이블
     df_vol = stock.get_market_ohlcv_by_ticker(datetime.datetime.now().strftime("%Y%m%d"), market=m_type)
     top_vol = df_vol.sort_values('거래량', ascending=False).head(10)
@@ -262,4 +262,5 @@ st.markdown("""
         Copylight ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 

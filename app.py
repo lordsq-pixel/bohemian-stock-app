@@ -175,7 +175,7 @@ def analyze_stock(ticker, today):
 # --- 4. 메인 UI 구성 ---
 
 # 상단 네비게이션 바
-st.markdown("""
+st.markdown(f"""
     <div class="top-nav">
         <div class="brand-name">📊 MAGIC STOCK.</div>
         <div id="live-clock-text" class="live-clock">
@@ -266,6 +266,7 @@ st.markdown("""
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

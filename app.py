@@ -61,21 +61,27 @@ def get_market_status(market_code, today):
 
 # 종목 상세 분석
 def analyze_stock(ticker, today):
-    try:
-        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=90)).strftime("%Y%m%d")
-        df = stock.get_market_ohlcv_by_date(start, today, ticker)
-        if len(df) < 30: return 0
-        curr = df['종가'].iloc[-1]
-        high = df['고가'].iloc[-1]
-        sma5 = SMAIndicator(close=df["종가"], window=5, fillna=True).sma_indicator().iloc[-1]
-        rsi = RSIIndicator(close=df["종가"], window=14, fillna=True).rsi().iloc[-1]
-        
-        score = 0
-        if curr > sma5: score += 2
-        if 50 <= rsi <= 70: score += 3
-        if curr >= high * 0.99: score += 2
-        return score
-    except: return -1
+    start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=90)).strftime("%Y%m%d")
+    df = stock.get_market_ohlcv_by_date(start, today, ticker)
+
+    if df.empty or len(df) < 30:
+        return 0
+
+    sma5 = SMAIndicator(df["종가"], window=5).sma_indicator()
+    rsi = RSIIndicator(df["종가"], window=14).rsi()
+
+    if sma5.isna().iloc[-1] or rsi.isna().iloc[-1]:
+        return 0
+
+    curr = df['종가'].iloc[-1]
+    high = df['고가'].iloc[-1]
+
+    score = 0
+    if curr > sma5.iloc[-1]: score += 2
+    if 50 <= rsi.iloc[-1] <= 70: score += 3
+    if curr >= high * 0.99: score += 2
+
+    return score
 
 # --- 4. 메인 UI ---
 
@@ -156,6 +162,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

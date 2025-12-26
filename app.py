@@ -178,7 +178,9 @@ def analyze_stock(ticker, today):
 st.markdown("""
     <div class="top-nav">
         <div class="brand-name">📊 MAGIC STOCK.</div>
-        <div id="live-clock-text" class="live-clock"></div>
+        <div id="live-clock-text" class="live-clock">
+            {datetime.datetime.now(korea).strftime('%Y.%m.%d %H:%M:%S')}
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -264,6 +266,7 @@ st.markdown("""
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

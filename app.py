@@ -41,62 +41,58 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. 로직 함수 정의 (신호등 & 수급분석 합본) ---
+# --- 3. 로직 함수 정의 ---
 
-# [1] 시장 지수 신호등 (정상 작동 버전)
+# 시장 지수 신호등
 def get_market_status(market_name):
+    # 코스피는 '1001', 코스닥은 '2001'이라는 고유 번호를 사용하면 더 정확합니다.
     ticker = "1001" if market_name == "KOSPI" else "2001"
+    
+    # 오늘부터 과거 10일치 데이터를 넉넉하게 가져옵니다 (주말/공휴일 대비)
     end = datetime.datetime.now().strftime("%Y%m%d")
     start = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime("%Y%m%d")
     
     try:
+        # 지수의 OHLCV(시가/고가/저가/종가) 데이터를 가져옴
         df = stock.get_index_ohlcv_by_date(start, end, ticker)
+        
         if len(df) < 2:
             return "⚪ 데이터 준비중", "거래소 데이터를 불러오는 중입니다.", "#F9F9F9", "#9E9E9E"
         
+        # 최신 종가와 전일 종가를 비교하여 등락률 계산
         curr_price = df['종가'].iloc[-1]
         prev_price = df['종가'].iloc[-2]
         rate = ((curr_price - prev_price) / prev_price) * 100
         
+        # 상태 판정 로직
         if rate > 0.5:
             return "🟢 시장 강세", f"지수 {rate:.2f}% 상승 중. 적극 매수 시점입니다.", "#E8F5E9", "#2E7D32"
         elif rate > -0.5:
             return "🟡 시장 보합", f"지수 {rate:.2f}% 보합. 확실한 대장주만 공략하세요.", "#FFFDE7", "#F57F17"
         else:
             return "🔴 시장 약세", f"지수 {rate:.2f}% 하락 중. 현금 비중을 늘리세요.", "#FFEBEE", "#C62828"
-    except:
-        return "⚪ 확인 불가", "데이터 연결 오류", "#F9F9F9", "#9E9E9E"
+            
+    except Exception as e:
+        return "⚪ 확인 불가", f"연결 오류: {str(e)}", "#F9F9F9", "#9E9E9E"
 
-# [2] 종목 상세 분석 (기술적 지표 + 수급 점수 포함)
+# 종목 상세 분석
 def analyze_stock(ticker, today):
     try:
-        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=100)).strftime("%Y%m%d")
+        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=90)).strftime("%Y%m%d")
         df = stock.get_market_ohlcv_by_date(start, today, ticker)
-        
         if len(df) < 30: return 0
-        
         curr = df['종가'].iloc[-1]
         high = df['고가'].iloc[-1]
         sma5 = SMAIndicator(close=df["종가"], window=5, fillna=True).sma_indicator().iloc[-1]
         rsi = RSIIndicator(close=df["종가"], window=14, fillna=True).rsi().iloc[-1]
         
         score = 0
-        # 차트 지표 점수 (최대 7점)
         if curr > sma5: score += 2
         if 50 <= rsi <= 70: score += 3
         if curr >= high * 0.99: score += 2
-        
-        # 수급 데이터 점수 (최대 4점 추가)
-        df_investor = stock.get_market_net_purchases_of_equities_by_ticker(today, today, ticker)
-        if not df_investor.empty:
-            foreigner = df_investor.loc[ticker, '외국인']
-            institution = df_investor.loc[ticker, '기관합계']
-            if foreigner > 0: score += 2
-            if institution > 0: score += 2
-            
         return score
     except: return -1
-        
+
 # --- 4. 메인 UI ---
 
 st.markdown('<H2 class="main-title">📊 MAGIC STOCK. </H2>', unsafe_allow_html=True)
@@ -113,12 +109,9 @@ if st.button('🔍 매수종목찾기'):
                 f'<span style="font-size:19px;">{title}</span><br>'
                 f'<span style="font-size:13px; font-weight:400;">{desc}</span></div>', unsafe_allow_html=True)
 
-    with st.spinner('최적의 매수 종목과 수급을 분석 중입니다...'):
-        # 1. 오늘 시장 전체의 종목별 수급 데이터를 미리 한 번에 가져옵니다 (속도 향상 및 누락 방지)
-        df_investor_all = stock.get_market_net_purchases_of_equities_by_ticker(today_str, today_str, market_type)
-        
-        # 2. 기본 가격 정보 가져오기
+    with st.spinner('최적의 매수 종목을 선별하고 있습니다...'):
         df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=market_type)
+        # 필터: 상승률 3%~25%, 거래량 상위
         filtered = df_base[(df_base['등락률'] >= 3.0) & (df_base['거래량'] > 100000)].sort_values('거래량', ascending=False).head(15)
 
     # B. 결과 리스트업
@@ -126,44 +119,28 @@ if st.button('🔍 매수종목찾기'):
     for ticker in filtered.index:
         name = stock.get_market_ticker_name(ticker)
         score = analyze_stock(ticker, today_str)
-        
-        # 미리 가져온 전체 수급 데이터에서 해당 종목의 수치를 찾습니다
-        if ticker in df_investor_all.index:
-            f_buy = df_investor_all.loc[ticker, '외국인']
-            i_buy = df_investor_all.loc[ticker, '기관합계']
-        else:
-            f_buy, i_buy = 0, 0
-
-        # 수급 수치가 0보다 크면 점수 추가 (여기서도 한 번 더 체크)
-        display_score = score
-        if f_buy > 0: display_score += 2
-        if i_buy > 0: display_score += 2
-
-        price = filtered.loc[ticker, '종가']
-        picks.append({
-            '종목명': name,
-            '현재가': price,
-            '등락률': filtered.loc[ticker, '등락률'],
-            '점수': min(display_score, 11), # 만점 11점 제한
-            '외국인': f_buy,
-            '기관': i_buy,
-            '목표가(+3%)': int(price * 1.03),
-            '상세정보': f"https://finance.naver.com/item/main.naver?code={ticker}"
-        })
+        if score >= 4:
+            price = filtered.loc[ticker, '종가']
+            picks.append({
+                '종목명': name,
+                '현재가': price,
+                '등락률': filtered.loc[ticker, '등락률'],
+                '점수': score,
+                '목표가(+3%)': int(price * 1.03),
+                '상세정보': f"https://finance.naver.com/item/main.naver?code={ticker}"
+            })
 
     # C. 추천 종목 출력
-    st.subheader("🎯 AI 실시간 추천종목")
+    st.subheader("🎯 AI 추천종목")
     
     if picks:
-        df_picks = pd.DataFrame(picks).sort_values('점수', ascending=False).head(7)
+        df_picks = pd.DataFrame(picks).sort_values('점수', ascending=False).head(5)
         st.data_editor(
             df_picks,
             column_config={
-                "점수": st.column_config.ProgressColumn("상승잠재력", min_value=0, max_value=11, format="%d"),
+                "점수": st.column_config.ProgressColumn("상승잠재력", min_value=0, max_value=7, format="%d"),
                 "현재가": st.column_config.NumberColumn(format="₩%d"),
                 "등락률": st.column_config.NumberColumn(format="%.2f%%"),
-                "외국인": st.column_config.NumberColumn("외국인(순매수)", format="%d"), 
-                "기관": st.column_config.NumberColumn("기관(순매수)", format="%d"),
                 "목표가(+3%)": st.column_config.NumberColumn(format="₩%d"),
                 "상세정보": st.column_config.LinkColumn("네이버증권", display_text="열기")
             },
@@ -185,5 +162,3 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
-
-

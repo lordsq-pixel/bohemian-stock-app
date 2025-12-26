@@ -199,7 +199,7 @@ with main_col1:
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown('<div class="section-title">AI QUANT ANALYSIS</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">국내시장 선택</div>', unsafe_allow_html=True)
     m_type = st.radio("시장 선택", ["KOSPI", "KOSDAQ"], horizontal=True, label_visibility="collapsed")
     
     if st.button('AI 실시간 추천 매수종목'):
@@ -262,6 +262,7 @@ st.markdown("""
         Copylight ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

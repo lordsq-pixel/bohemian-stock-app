@@ -135,7 +135,7 @@ def analyze_stock(ticker, today):
 # 상단 네비게이션 바
 st.markdown(f"""
     <div class="top-nav">
-        <div class="brand-name">📊 Ai 매직스톡</div>
+        <div class="brand-name">📊 매직스톡 Ai</div>
         <div id="live-clock-text" class="live-clock">
             {datetime.datetime.now(korea).strftime('%Y.%m.%d %H:%M:%S')}
         </div>
@@ -224,6 +224,7 @@ st.markdown("""
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

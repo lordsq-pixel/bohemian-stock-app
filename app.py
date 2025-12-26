@@ -43,42 +43,35 @@ st.markdown("""
 
 # --- 3. 로직 함수 정의 ---
 
-# 시장 지수 신호등
+# --- 3. 로직 함수 정의 (신호등 & 수급분석 합본) ---
+
+# [1] 시장 지수 신호등 (정상 작동 버전)
 def get_market_status(market_name):
-    # 코스피는 '1001', 코스닥은 '2001'이라는 고유 번호를 사용하면 더 정확합니다.
     ticker = "1001" if market_name == "KOSPI" else "2001"
-    
-    # 오늘부터 과거 10일치 데이터를 넉넉하게 가져옵니다 (주말/공휴일 대비)
     end = datetime.datetime.now().strftime("%Y%m%d")
     start = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime("%Y%m%d")
     
     try:
-        # 지수의 OHLCV(시가/고가/저가/종가) 데이터를 가져옴
         df = stock.get_index_ohlcv_by_date(start, end, ticker)
-        
         if len(df) < 2:
             return "⚪ 데이터 준비중", "거래소 데이터를 불러오는 중입니다.", "#F9F9F9", "#9E9E9E"
         
-        # 최신 종가와 전일 종가를 비교하여 등락률 계산
         curr_price = df['종가'].iloc[-1]
         prev_price = df['종가'].iloc[-2]
         rate = ((curr_price - prev_price) / prev_price) * 100
         
-        # 상태 판정 로직
         if rate > 0.5:
             return "🟢 시장 강세", f"지수 {rate:.2f}% 상승 중. 적극 매수 시점입니다.", "#E8F5E9", "#2E7D32"
         elif rate > -0.5:
             return "🟡 시장 보합", f"지수 {rate:.2f}% 보합. 확실한 대장주만 공략하세요.", "#FFFDE7", "#F57F17"
         else:
             return "🔴 시장 약세", f"지수 {rate:.2f}% 하락 중. 현금 비중을 늘리세요.", "#FFEBEE", "#C62828"
-            
-    except Exception as e:
-        return "⚪ 확인 불가", f"연결 오류: {str(e)}", "#F9F9F9", "#9E9E9E"
+    except:
+        return "⚪ 확인 불가", "데이터 연결 오류", "#F9F9F9", "#9E9E9E"
 
-# 종목 상세 분석 (기술적 지표 + 수급 분석 추가)
+# [2] 종목 상세 분석 (기술적 지표 + 수급 점수 포함)
 def analyze_stock(ticker, today):
     try:
-        # 데이터 안정성을 위해 넉넉하게 100일치 조회
         start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=100)).strftime("%Y%m%d")
         df = stock.get_market_ohlcv_by_date(start, today, ticker)
         
@@ -90,25 +83,22 @@ def analyze_stock(ticker, today):
         rsi = RSIIndicator(close=df["종가"], window=14, fillna=True).rsi().iloc[-1]
         
         score = 0
-        # [기존 로직]
+        # 차트 지표 점수 (최대 7점)
         if curr > sma5: score += 2
         if 50 <= rsi <= 70: score += 3
         if curr >= high * 0.99: score += 2
         
-        # [추가 로직] 외국인/기관 수급 분석 (최근 1일 기준)
-        # 매수/매도 수량 데이터를 가져옵니다.
+        # 수급 데이터 점수 (최대 4점 추가)
         df_investor = stock.get_market_net_purchases_of_equities_by_ticker(today, today, ticker)
-        
         if not df_investor.empty:
             foreigner = df_investor.loc[ticker, '외국인']
             institution = df_investor.loc[ticker, '기관합계']
-            
-            if foreigner > 0: score += 2    # 외국인 순매수 시 +2점
-            if institution > 0: score += 2  # 기관 순매수 시 +2점
+            if foreigner > 0: score += 2
+            if institution > 0: score += 2
             
         return score
     except: return -1
-
+        
 # --- 4. 메인 UI ---
 
 st.markdown('<H2 class="main-title">📊 MAGIC STOCK. </H2>', unsafe_allow_html=True)
@@ -154,7 +144,7 @@ if st.button('🔍 매수종목찾기'):
         st.data_editor(
             df_picks,
             column_config={
-                "점수": st.column_config.ProgressColumn("상승잠재력", min_value=0, max_value=7, format="%d"),
+                "점수": st.column_config.ProgressColumn("상승잠재력", min_value=0, max_value=11, format="%d"),
                 "현재가": st.column_config.NumberColumn(format="₩%d"),
                 "등락률": st.column_config.NumberColumn(format="%.2f%%"),
                 "목표가(+3%)": st.column_config.NumberColumn(format="₩%d"),
@@ -178,6 +168,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

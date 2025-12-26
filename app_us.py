@@ -195,7 +195,7 @@ main_col1, main_col2 = st.columns([2, 1])
 # ==========================================
 if "국내" in country_mode:
     with main_col1:
-        st.markdown('<div class="section-title">현재시황</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">한국 시황</div>', unsafe_allow_html=True)
         idx_col1, idx_col2 = st.columns(2)
         
         for m_name, col in zip(["KOSPI", "KOSDAQ"], [idx_col1, idx_col2]):
@@ -360,3 +360,4 @@ st.markdown("""
         Copyright ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+

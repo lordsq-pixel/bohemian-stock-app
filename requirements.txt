@@ -1,4 +1,5 @@
 streamlit
+finance-datareader
 pykrx
 pandas
-finance-datareader
+setuptools

@@ -13,9 +13,9 @@ st.set_page_config(page_title="MAGIC STOCK.", layout="wide", initial_sidebar_sta
 # --- 2. 증권사 스타일 CSS 및 실시간 시계 스크립트 ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
 
-    /* 전체 배경: 증권사 특유의 밝은 회색 배경 */
+    /* 전체 배경 */
     .stApp {
         background-color: #F2F4F7;
         color: #1A1A1A;
@@ -28,7 +28,7 @@ st.markdown("""
     /* 상단 GNB 스타일 */
     .top-nav {
         background-color: #FFFFFF;
-        padding: 20px 25px; /* 패딩 약간 증가 */
+        padding: 25px 30px; 
         border-bottom: 2px solid #E5E8EB;
         display: flex;
         justify-content: space-between;
@@ -40,22 +40,22 @@ st.markdown("""
     
     /* 타이틀 크기 대폭 확대 */
     .brand-name {
-        font-size: 36px; /* 20px -> 36px로 확대 */
+        font-size: 48px; /* 36px -> 48px로 확대 */
         font-weight: 800;
-        color: #0052CC; /* 증권사 블루 */
-        letter-spacing: -1px;
+        color: #0052CC;
+        letter-spacing: -1.5px;
     }
 
     /* 실시간 시계 */
     .live-clock {
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 700;
         color: #4E5968;
         background: #F9FAFB;
-        padding: 8px 15px;
-        border-radius: 8px;
+        padding: 10px 20px;
+        border-radius: 12px;
         border: 1px solid #E5E8EB;
-        font-variant-numeric: tabular-nums; /* 숫자 너비 고정 */
+        font-family: 'Courier New', monospace; /* 숫자 너비 고정 */
     }
 
     /* 섹션 제목 스타일 */
@@ -133,32 +133,33 @@ st.markdown("""
 
     <div class="top-nav">
         <div class="brand-name">MAGIC STOCK.</div>
-        <div id="live-clock-text" class="live-clock">로딩 중...</div>
+        <div id="live-clock-text" class="live-clock">계산 중...</div>
     </div>
 
     <script>
-    function updateClock() {
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const hh = String(now.getHours()).padStart(2, '0');
-        const min = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        
-        const format = `${yyyy}.${mm}.${dd} ${hh}:${min}:${ss}`;
-        const clockElement = document.getElementById('live-clock-text');
-        if (clockElement) {
-            clockElement.innerText = format;
+    (function() {
+        function updateClock() {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            
+            const format = yyyy + '.' + mm + '.' + dd + ' ' + hh + ':' + min + ':' + ss;
+            const clockElement = document.getElementById('live-clock-text');
+            if (clockElement) {
+                clockElement.innerText = format;
+            }
         }
-    }
-    // 즉시 실행 및 1초마다 업데이트
-    updateClock();
-    setInterval(updateClock, 1000);
+        setInterval(updateClock, 1000);
+        updateClock(); // 즉시 실행
+    })();
     </script>
     """, unsafe_allow_html=True)
 
-# --- 3. 데이터 로직 (기존 로직 유지) ---
+# --- 3. 데이터 로직 (원본 소스 절대로 수정하지 않음) ---
 
 def get_market_data(market_name):
     ticker = "1001" if market_name == "KOSPI" else "2001"
@@ -196,7 +197,6 @@ def analyze_stock(ticker, today):
 
 # --- 4. 메인 UI 구성 ---
 
-# 메인 레이아웃 (GNB는 CSS 파트에서 이미 출력됨)
 main_col1, main_col2 = st.columns([2, 1])
 
 with main_col1:

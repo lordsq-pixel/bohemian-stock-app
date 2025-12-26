@@ -78,18 +78,36 @@ def get_market_status(market_name):
 # 종목 상세 분석
 def analyze_stock(ticker, today):
     try:
-        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=90)).strftime("%Y%m%d")
+        # 최근 60일치 데이터를 가져와서 분석 (이평선 및 거래량 평균 계산용)
+        start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=60)).strftime("%Y%m%d")
         df = stock.get_market_ohlcv_by_date(start, today, ticker)
-        if len(df) < 30: return 0
+        
+        if len(df) < 20: return 0
+        
         curr = df['종가'].iloc[-1]
-        high = df['고가'].iloc[-1]
-        sma5 = SMAIndicator(close=df["종가"], window=5, fillna=True).sma_indicator().iloc[-1]
-        rsi = RSIIndicator(close=df["종가"], window=14, fillna=True).rsi().iloc[-1]
+        prev_close = df['종가'].iloc[-2]
+        volume_curr = df['거래량'].iloc[-1]
+        volume_avg = df['거래량'].iloc[-20:-1].mean() # 최근 20일 평균 거래량
+        
+        # 이동평균선 계산
+        sma5 = df['종가'].rolling(window=5).mean().iloc[-1]
+        sma20 = df['종가'].rolling(window=20).mean().iloc[-1]
         
         score = 0
-        if curr > sma5: score += 2
-        if 50 <= rsi <= 70: score += 3
-        if curr >= high * 0.99: score += 2
+        
+        # [신호 1] 거래량 급증 (가장 중요)
+        # 평균 거래량보다 현재 거래량이 이미 80% 이상 올라왔다면 세력 유입 가능성
+        if volume_curr > volume_avg * 1.2: score += 3
+        
+        # [신호 2] 골든크로스 혹은 정배열 초기
+        # 5일선이 20일선 위에 있거나 막 돌파하려는 순간
+        if sma5 >= box_sma20 * 0.98: score += 2 
+        
+        # [신호 3] 바닥권 탈출
+        # 현재가가 최근 20일 최고가 대비 너무 높지 않은 상태 (이미 폭등한 종목 제외)
+        high_20 = df['고가'].iloc[-20:].max()
+        if curr < high_20 * 1.05: score += 2
+        
         return score
     except: return -1
 
@@ -166,4 +184,5 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 

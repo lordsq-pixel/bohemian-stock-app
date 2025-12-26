@@ -131,7 +131,7 @@ if st.button('🔍 매수종목찾기'):
             })
 
     # C. 추천 종목 출력
-    st.subheader("🎯 AI PREMIUM PICKS")
+    st.subheader("🎯 AI 추천종목")
     
     if picks:
         df_picks = pd.DataFrame(picks).sort_values('점수', ascending=False).head(5)
@@ -162,4 +162,5 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 

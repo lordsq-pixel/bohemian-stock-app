@@ -2,7 +2,7 @@ import pytz
 korea = pytz.timezone("Asia/Seoul")
 import streamlit as st
 from pykrx import stock
-import yfinance as yf # 미국 주식용 라이브러리 추가
+import yfinance as yf # 미국 주식 라이브러리 추가
 import pandas as pd
 import datetime
 import numpy as np
@@ -13,7 +13,7 @@ from ta.volatility import BollingerBands
 # --- 1. 페이지 설정 ---
 st.set_page_config(page_title="MAGIC STOCK", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 2. 증권사 스타일 CSS (기존 동일) ---
+# --- 2. 증권사 스타일 CSS (원본 유지) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
@@ -21,14 +21,19 @@ st.markdown("""
     .stApp { background-color: #F2F4F7; color: #1A1A1A; }
     html, body, [class*="css"] { font-family: 'Pretendard', -apple-system, sans-serif; }
 
+    /* [핵심] 상단 여백 제거 및 컨텐츠 위로 올리기 */
     .block-container {
         padding-top: 0rem !important;
         padding-bottom: 2rem !important;
         max-width: 100% !important;
     }
     
-    header[data-testid="stHeader"] { display: none !important; }
+    /* Streamlit 기본 헤더(햄버거 메뉴 라인) 숨기기 */
+    header[data-testid="stHeader"] {
+        display: none !important;
+    }
 
+    /* 상단 GNB (위치 보정) */
     .top-nav {
         background-color: #FFFFFF; 
         padding: 12px 25px;
@@ -46,6 +51,7 @@ st.markdown("""
         margin: 25px 0 15px 0; padding-left: 10px; border-left: 4px solid #0052CC;
     }
 
+    /* 카드 스타일 */
     .index-card {
         background: white; border-radius: 12px; padding: 15px; border: 1px solid #E5E8EB; text-align: left;
     }
@@ -53,6 +59,7 @@ st.markdown("""
     .index-value { font-size: 20px; font-weight: 700; margin: 4px 0; }
     .index-change { font-size: 13px; font-weight: 600; }
 
+    /* 버튼 스타일 */
     .stButton>button {
         width: 100% !important; height: 50px;
         background: #0052CC !important; color: #FFFFFF !important;
@@ -62,6 +69,7 @@ st.markdown("""
     }
     .stButton>button:hover { background: #003fa3 !important; }
 
+    /* 리스트 스타일 */
     .stock-row {
         background: white; border-bottom: 1px solid #F2F4F7; padding: 15px 20px;
         display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;
@@ -77,6 +85,7 @@ st.markdown("""
     .up { color: #E52E2E; } 
     .down { color: #0055FF; }
 
+    /* 푸터 */
     .footer { padding: 40px 20px; text-align: center; font-size: 12px; color: #8B95A1; background: #F9FAFB; margin-top: 50px; }
     
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} 
@@ -85,7 +94,7 @@ st.markdown("""
 
 # --- 3. 데이터 로직 ---
 
-# [기존] 국내장 데이터 함수
+# [기존] 국내 함수
 def get_market_data(market_name):
     ticker = "1001" if market_name == "KOSPI" else "2001"
     end = datetime.datetime.now().strftime("%Y%m%d")
@@ -100,7 +109,6 @@ def get_market_data(market_name):
     except:
         return 0, 0, 0
 
-# [기존] 국내장 분석 함수
 def analyze_stock(ticker, today):
     try:
         start = (datetime.datetime.strptime(today, "%Y%m%d") - datetime.timedelta(days=60)).strftime("%Y%m%d")
@@ -121,10 +129,9 @@ def analyze_stock(ticker, today):
         return score
     except: return -1
 
-# [추가] 미국장 지수 함수
+# [추가] 미국 함수
 def get_us_index(symbol):
     try:
-        # symbol: ^GSPC (S&P500), ^IXIC (NASDAQ)
         tk = yf.Ticker(symbol)
         df = tk.history(period="5d")
         curr = df['Close'].iloc[-1]
@@ -132,28 +139,24 @@ def get_us_index(symbol):
         change = curr - prev
         rate = (change / prev) * 100
         return curr, change, rate
-    except:
-        return 0, 0, 0
+    except: return 0, 0, 0
 
-# [추가] 미국장 분석 함수 (yfinance 전용)
 def analyze_us_stock(ticker):
     try:
         tk = yf.Ticker(ticker)
-        df = tk.history(period="3mo") # 최근 3개월 데이터
+        df = tk.history(period="3mo")
         if len(df) < 30: return 0, 0, 0
         
-        # 영어 컬럼명 대응
         indicator_bb = BollingerBands(close=df["Close"], window=20, window_dev=2)
         df['bb_low'] = indicator_bb.bollinger_lband()
+        
         curr_close = df['Close'].iloc[-1]
         curr_low = df['Low'].iloc[-1]
         prev_low = df['Low'].iloc[-2]
-        
         rsi = RSIIndicator(close=df["Close"], window=14).rsi().iloc[-1]
         sma5 = SMAIndicator(close=df["Close"], window=5).sma_indicator().iloc[-1]
         
         score = 0
-        # 로직은 국내장과 동일
         if (prev_low <= df['bb_low'].iloc[-2]) or (curr_low <= df['bb_low'].iloc[-1]):
             if curr_close > df['bb_low'].iloc[-1]: score += 4
         if curr_close > sma5: score += 1
@@ -162,7 +165,6 @@ def analyze_us_stock(ticker):
         vol_mean = df['Volume'].iloc[-20:-1].mean()
         if vol_mean > 0 and df['Volume'].iloc[-1] > vol_mean * 1.1: score += 1
         
-        # 등락률 계산
         prev_close = df['Close'].iloc[-2]
         rate = ((curr_close - prev_close) / prev_close) * 100
         
@@ -171,28 +173,27 @@ def analyze_us_stock(ticker):
 
 # --- 4. 메인 UI 구성 ---
 
-# 사이드바에서 모드 선택 (기본적으로 숨겨진 상태지만 화살표로 열 수 있음)
-with st.sidebar:
-    st.title("Settings")
-    market_mode = st.radio("시장 선택", ["국내증시 (KRX)", "미국증시 (US)"])
-
-# 상단 네비게이션 바
+# 상단 네비게이션
 st.markdown(f"""
     <div class="top-nav">
-        <div class="brand-name">📊 매직스톡 Ai ({'US' if '미국' in market_mode else 'KR'})</div>
+        <div class="brand-name">📊 매직스톡 Ai</div>
         <div id="live-clock-text" class="live-clock">
             {datetime.datetime.now(korea).strftime('%Y.%m.%d %H:%M:%S')}
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-# 메인 레이아웃
+# [핵심] 사이드바 없이 메인 화면에서 국가 선택 (라디오 버튼)
+st.markdown('<div class="section-title">국가 선택</div>', unsafe_allow_html=True)
+country_mode = st.radio("국가 선택", ["🇰🇷 국내주식 (KRX)", "🇺🇸 미국주식 (US)"], horizontal=True, label_visibility="collapsed")
+
+# 메인 레이아웃 분기
 main_col1, main_col2 = st.columns([2, 1])
 
 # ==========================================
-# [모드 1] 국내증시 (기존 코드 유지)
+# 1. 국내주식 모드 (기존 소스 완벽 유지)
 # ==========================================
-if "국내" in market_mode:
+if "국내" in country_mode:
     with main_col1:
         st.markdown('<div class="section-title">현재시황</div>', unsafe_allow_html=True)
         idx_col1, idx_col2 = st.columns(2)
@@ -265,21 +266,20 @@ if "국내" in market_mode:
             """, unsafe_allow_html=True)
 
 # ==========================================
-# [모드 2] 미국증시 (신규 추가)
+# 2. 미국주식 모드 (추가된 기능)
 # ==========================================
 else:
     with main_col1:
         st.markdown('<div class="section-title">미국 시황</div>', unsafe_allow_html=True)
         idx_col1, idx_col2 = st.columns(2)
         
-        # S&P500, NASDAQ
-        for name, sym in zip(["S&P 500", "NASDAQ"], ["^GSPC", "^IXIC"]):
-            val, chg, rt = get_us_index(sym)
+        for name, ticker in zip(["S&P 500", "NASDAQ"], ["^GSPC", "^IXIC"]):
+            val, chg, rt = get_us_index(ticker)
             color_class = "up" if chg > 0 else "down"
             sign = "+" if chg > 0 else ""
             
-            # 카드 디자인 (국내장과 동일 CSS 클래스 사용)
-            with (idx_col1 if name=="S&P 500" else idx_col2):
+            # 국내장과 동일한 카드 디자인 적용
+            with (idx_col1 if name == "S&P 500" else idx_col2):
                 st.markdown(f"""
                     <div class="index-card">
                         <div class="index-name">{name}</div>
@@ -289,28 +289,25 @@ else:
                 """, unsafe_allow_html=True)
 
         st.markdown('<div class="section-title">주요 종목 분석</div>', unsafe_allow_html=True)
-        st.info("미국장은 전수 조사가 어려워 주요 인기 종목 20개를 분석합니다.")
+        st.info("미국장은 주요 인기 종목 20개를 대상으로 분석합니다.")
         
         if st.button('🎯 US AI Analysis'):
-            # 미국 인기 종목 리스트
             us_tickers = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD', 'INTC', 'QQQ', 'SPY', 'SOXL', 'TQQQ', 'COIN', 'PLTR', 'IONQ', 'JOBY', 'NFLX', 'DIS', 'KO']
             
-            with st.spinner('Wall Street 데이터 수신 및 분석중...'):
+            with st.spinner('Wall Street 데이터 분석중...'):
                 picks = []
-                # 진행률 표시
-                my_bar = st.progress(0)
+                bar = st.progress(0)
                 
                 for i, ticker in enumerate(us_tickers):
                     score, price, rate = analyze_us_stock(ticker)
                     if score >= 4:
                         picks.append({
-                            'ticker': ticker, 'name': ticker, # 미국은 티커가 곧 이름인 경우가 많음
+                            'ticker': ticker, 'name': ticker,
                             'price': price, 'rate': rate,
                             'score': score, 'target': price * 1.05
                         })
-                    my_bar.progress((i + 1) / len(us_tickers))
-                
-                my_bar.empty()
+                    bar.progress((i + 1) / len(us_tickers))
+                bar.empty()
 
                 if picks:
                     st.markdown('<div style="background: white; border-radius: 12px; overflow: hidden; border: 1px solid #E5E8EB;">', unsafe_allow_html=True)
@@ -334,8 +331,7 @@ else:
                     st.info("분석 기준(강력 매수 시그널)을 충족하는 종목이 없습니다.")
 
     with main_col2:
-        st.markdown('<div class="section-title">관심 종목 현황</div>', unsafe_allow_html=True)
-        # 미국장은 실시간 전체 랭킹 대신 주요 관심 종목 시세판으로 대체
+        st.markdown('<div class="section-title">관심 종목 시세</div>', unsafe_allow_html=True)
         watch_list = ['NVDA', 'TSLA', 'AAPL', 'SOXL']
         
         for ticker in watch_list:
@@ -346,7 +342,6 @@ else:
                 prev = hist['Close'].iloc[-2]
                 chg = curr - prev
                 rt = (chg/prev)*100
-                
                 color = "#E52E2E" if chg > 0 else "#0055FF"
                 
                 st.markdown(f"""

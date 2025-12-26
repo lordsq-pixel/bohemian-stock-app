@@ -84,6 +84,12 @@ st.markdown('<p class="sub-title"># AI 실시간 빅데이터 분석 기반 #</p
 st.markdown('<H4 class="sub-title">[ 09:00 - 15:30 ]</H4>', unsafe_allow_html=True)
 
 market_type = st.sidebar.selectbox("📊 시장선택", ["KOSPI", "KOSDAQ"])
+market_map = {
+    "1. 코스피": "KOSPI",
+    "2. 코스닥": "KOSDAQ"
+}
+market_code = market_map[market_type]
+
 today_str = get_latest_trading_day(market_code)
 if today_str is None:
     st.warning("📛 최근 거래일 데이터를 불러올 수 없습니다.")
@@ -150,5 +156,6 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 

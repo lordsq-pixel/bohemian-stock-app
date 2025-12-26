@@ -102,17 +102,21 @@ st.markdown('<H4 class="sub-title">[ 09:00 - 15:30 ]</H4>', unsafe_allow_html=Tr
 market_type = st.sidebar.selectbox("📊 시장선택", ["KOSPI", "KOSDAQ"])
 today_str = datetime.datetime.now().strftime("%Y%m%d")
 
-if st.button('🔍 매수종목찾기'):
+if st.button('🔍 초동 매수 종목 찾기'):
     # A. 시장 신호등
     title, desc, bg, txt = get_market_status(market_type)
     st.markdown(f'<div class="signal-box" style="background-color:{bg}; color:{txt}; border:1px solid {txt}22;">'
                 f'<span style="font-size:19px;">{title}</span><br>'
                 f'<span style="font-size:13px; font-weight:400;">{desc}</span></div>', unsafe_allow_html=True)
 
-    with st.spinner('최적의 매수 종목을 선별하고 있습니다...'):
+    with st.spinner('저점에서 머리를 들기 시작한 종목을 찾는중'):
         df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=market_type)
-        # 필터: 상승률 3%~25%, 거래량 상위
-        filtered = df_base[(df_base['등락률'] >= 3.0) & (df_base['거래량'] > 100000)].sort_values('거래량', ascending=False).head(15)
+        # 필터 변경: 등락률 0.5% ~ 2.5% 사이의 '조용한' 종목들 중 거래량 있는 것
+        filtered = df_base[
+            (df_base['등락률'] >= 0.5) & 
+            (df_base['등락률'] <= 2.5) & 
+            (df_base['거래량'] > 50000)
+        ].sort_values('거래량', ascending=False).head(30) # 후보군을 30개로 확대
 
     # B. 결과 리스트업
     picks = []
@@ -162,3 +166,4 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+

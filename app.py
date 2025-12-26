@@ -175,7 +175,7 @@ def analyze_stock(ticker, today):
 # 상단 네비게이션 바
 st.markdown(f"""
     <div class="top-nav">
-        <div class="brand-name">MAGIC SECURITIES</div>
+        <div class="brand-name">MAGIC STOCK.</div>
         <div id="live-clock-text" class="live-clock">{datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S')}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -262,6 +262,7 @@ st.markdown("""
         Copylight ⓒ 2026 Bohemian All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 

@@ -113,41 +113,49 @@ if st.button('🔍 매수종목찾기'):
                 f'<span style="font-size:19px;">{title}</span><br>'
                 f'<span style="font-size:13px; font-weight:400;">{desc}</span></div>', unsafe_allow_html=True)
 
-    with st.spinner('최적의 매수 종목을 선별하고 있습니다...'):
+    with st.spinner('최적의 매수 종목과 수급을 분석 중입니다...'):
+        # 1. 오늘 시장 전체의 종목별 수급 데이터를 미리 한 번에 가져옵니다 (속도 향상 및 누락 방지)
+        df_investor_all = stock.get_market_net_purchases_of_equities_by_ticker(today_str, today_str, market_type)
+        
+        # 2. 기본 가격 정보 가져오기
         df_base = stock.get_market_price_change_by_ticker(today_str, today_str, market=market_type)
-        # 필터: 상승률 3%~25%, 거래량 상위
         filtered = df_base[(df_base['등락률'] >= 3.0) & (df_base['거래량'] > 100000)].sort_values('거래량', ascending=False).head(15)
 
-    # B. 결과 리스트업 (수급 데이터 추출 추가)
+    # B. 결과 리스트업
     picks = []
     for ticker in filtered.index:
         name = stock.get_market_ticker_name(ticker)
         score = analyze_stock(ticker, today_str)
         
-        # 점수 기준 5점 이상 (수급 점수 포함)
-        if score >= 5: 
-            # 실제로 외국인/기관이 몇 주 샀는지 데이터를 가져옵니다
-            df_inv = stock.get_market_net_purchases_of_equities_by_ticker(today_str, today_str, ticker)
-            f_buy = df_inv.loc[ticker, '외국인'] if not df_inv.empty else 0
-            i_buy = df_inv.loc[ticker, '기관합계'] if not df_inv.empty else 0
-            
-            price = filtered.loc[ticker, '종가']
-            picks.append({
-                '종목명': name,
-                '현재가': price,
-                '등락률': filtered.loc[ticker, '등락률'],
-                '점수': score,
-                '외국인': f_buy,   # 표에 숫자로 표시
-                '기관': i_buy,     # 표에 숫자로 표시
-                '목표가(+3%)': int(price * 1.03),
-                '상세정보': f"https://finance.naver.com/item/main.naver?code={ticker}"
-            })
+        # 미리 가져온 전체 수급 데이터에서 해당 종목의 수치를 찾습니다
+        if ticker in df_investor_all.index:
+            f_buy = df_investor_all.loc[ticker, '외국인']
+            i_buy = df_investor_all.loc[ticker, '기관합계']
+        else:
+            f_buy, i_buy = 0, 0
 
-    # C. 추천 종목 출력 (UI에 수급 컬럼 추가)
-    st.subheader("🎯 AI PREMIUM PICKS (수급 분석 포함)")
+        # 수급 수치가 0보다 크면 점수 추가 (여기서도 한 번 더 체크)
+        display_score = score
+        if f_buy > 0: display_score += 2
+        if i_buy > 0: display_score += 2
+
+        price = filtered.loc[ticker, '종가']
+        picks.append({
+            '종목명': name,
+            '현재가': price,
+            '등락률': filtered.loc[ticker, '등락률'],
+            '점수': min(display_score, 11), # 만점 11점 제한
+            '외국인': f_buy,
+            '기관': i_buy,
+            '목표가(+3%)': int(price * 1.03),
+            '상세정보': f"https://finance.naver.com/item/main.naver?code={ticker}"
+        })
+
+    # C. 추천 종목 출력
+    st.subheader("🎯 AI PREMIUM PICKS (수급 실시간 반영)")
     
     if picks:
-        df_picks = pd.DataFrame(picks).sort_values('점수', ascending=False).head(5)
+        df_picks = pd.DataFrame(picks).sort_values('점수', ascending=False).head(7)
         st.data_editor(
             df_picks,
             column_config={
@@ -177,3 +185,4 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+

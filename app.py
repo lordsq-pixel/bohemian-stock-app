@@ -98,7 +98,7 @@ if today_str is None:
 
 if st.button('🔍 매수종목찾기'):
     # A. 시장 신호등
-    title, desc, bg, txt = get_market_status(market_type)
+    title, desc, bg, txt = get_market_status(market_code, today_str)
     st.markdown(f'<div class="signal-box" style="background-color:{bg}; color:{txt}; border:1px solid {txt}22;">'
                 f'<span style="font-size:19px;">{title}</span><br>'
                 f'<span style="font-size:13px; font-weight:400;">{desc}</span></div>', unsafe_allow_html=True)
@@ -156,6 +156,7 @@ st.markdown(f"""
         Copyright © 2026 보헤미안. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
